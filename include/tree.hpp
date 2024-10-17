@@ -1,53 +1,118 @@
 #pragma once
 
-#include <stdlib.h>
+#include <iostream>
+#include <functional>
+
 
 namespace trees {
 
-    template <typename Key = int>
+    template <typename KeyT, typename Compare>
+    class AVLtree;
+
+
+    template <typename KeyT = int>
     class Node
     {
-    private:
-        Node *left_, *right_, *parent_;
-        size_t subtree_height_;
-        size_t balance_factor_;
+        friend class AVLtree<KeyT, std::less<KeyT>>;
 
-    public:
-        Node(Key key);
-        Node(Key key, Node* parent_, Node* left_ = 0, Node* right = 0);
+        Node *left_ = nullptr;
+        Node *right_ = nullptr;
+        Node *parent_ = nullptr;
+        KeyT key_; 
 
-        size_t height() const;
-        size_t balance_factor() const;
+        Node(KeyT key) : key_(key) {}
+        Node(KeyT key, Node *parent, Node *left = nullptr, Node *right = nullptr) :
+            key_(key), parent_(parent), left_(left), right_(right) {}
 
-        void set_height(); // fix_height maybe
-        void set_balance_factor();
+        ~Node()
+        {
+            delete left_;
+            delete right_;
+        }
 
-        Node* rotate_right();
-        Node* rotate_left();
+        size_t num_less_elems(KeyT key)
+        {
+            if (key_ > key)
+                return 0;
 
-        Node* do_big_rotate();
+            size_t count = key_ < key ? 1 : 0;
 
-        ~Node();
+            if (left_ != nullptr)
+                count += left_->num_less_elems(key);
+            if (right_ != nullptr)
+                count += right_->num_less_elems(key);
+
+            return count;
+        }
+
+        void insert(KeyT key)
+        {
+            if (key == key_)
+                return;
+            
+            if (key < key_) // left
+            {
+                if (left_ == nullptr)
+                {
+                    left_ = new Node(key);
+                    return;
+                }
+                else
+                {
+                    left_->insert(key);
+                }
+            }
+            else // right
+            {
+                if (right_ == nullptr)
+                {
+                    right_ = new Node(key);
+                    return;
+                }
+                else
+                {
+                    right_->insert(key);
+                }
+            }
+        }
+
     }; // class Node
 
-    template <typename Key = int, typename Compare = std::less<Key>>
+    template <typename KeyT = int, typename Compare = std::less<KeyT>>
     class AVLtree 
     {
     private:
-        size_t tree_height_;
-        size_t size_;
-        Node* root_;
+        using NodeT = Node<KeyT>;
+
+        size_t height_ = 0;
+        size_t size_ = 0;
+        NodeT *root_ = nullptr;
 
     public:
-        AVLtree() = default;  /// TODO:
-        ~AVLtree() = default; /// TODO:
+        AVLtree() = default;
+        AVLtree(KeyT key) : root_(new Node(key)), size_(1), height_(1) {}
 
-        void insert();
-        std::iterator<Node> erase();
-        std::iterator<Node> find() const;
+        ~AVLtree()
+        {   
+            delete root_;
+        }
 
-        bool is_balanced() const;
+        void insert(KeyT key)
+        {
+            if (root_ == nullptr)
+                root_ = new Node(key);
+            else
+                root_->insert(key);
 
-    } // class AVL tree 
+            size_++;
+            height_++;
+        }
+
+        size_t num_less_elems(KeyT key) const
+        {
+            return root_ == nullptr ? 0 : root_->num_less_elems(key);
+        }
+
+    }; // class AVL tree 
 
 } // namespace tree
