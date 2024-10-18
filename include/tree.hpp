@@ -107,7 +107,9 @@ namespace trees {
 
         size_t get_num_elems_from_diapason(KeyT key1, KeyT key2) const
         {
-            assert(key1 <= key2);
+            if (key1 > key2)
+                return 0;
+                
             return root_ == nullptr ? 0 : root_->num_elems_from_diapason(key1, key2);
         }
 
