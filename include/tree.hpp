@@ -15,13 +15,15 @@ namespace trees {
     {
         friend class AVLtree<KeyT, std::less<KeyT>>;
 
-        Node *left_ = nullptr;
-        Node *right_ = nullptr;
-        Node *parent_ = nullptr;
+        using IterT = Node*;
+
+        IterT left_ = nullptr;
+        IterT right_ = nullptr;
+        IterT parent_ = nullptr;
         KeyT key_; 
 
         Node(KeyT key) : key_(key) {}
-        Node(KeyT key, Node *parent, Node *left = nullptr, Node *right = nullptr) :
+        Node(KeyT key, IterT parent, IterT left = nullptr, IterT right = nullptr) :
             key_(key), parent_(parent), left_(left), right_(right) {}
 
         ~Node()
@@ -30,16 +32,54 @@ namespace trees {
             delete right_;
         }
 
-        size_t num_elems_from_diapason(KeyT key1, KeyT key2)
+        IterT lower_bound(KeyT key)
         {
-            size_t count = key1 <= key_ && key_ <= key2 ? 1 : 0;
+            if (key_ == key)
+                return this;
+            
+            if (key_ > key)
+            {
+                if (left_ == nullptr)
+                    return this;
 
-            if (key1 <= key_ && left_ != nullptr)
-                count += left_->num_elems_from_diapason(key1, key2);
-            if (key_ <= key2 && right_ != nullptr)
-                count += right_->num_elems_from_diapason(key1, key2);
+                return left_->lower_bound(key);
+            }
 
-            return count;
+            if (key_ < key)
+            {
+                if (right_ == nullptr)
+                    return this;
+
+                if (right_->key_ <= key)
+                    return right_->lower_bound(key);
+                else
+                    return this;
+            }
+        }
+
+        IterT upper_bound(KeyT key)
+        {
+            if (key_ == key)
+                return this;
+            
+            if (key_ < key)
+            {
+                if (right_ == nullptr)
+                    return this;
+
+                return right_->upper_bound(key);
+            }
+
+            if (key_ > key)
+            {
+                if (left_ == nullptr)
+                    return this;
+
+                if (left_->key_ >= key)
+                    return left_->upper_bound(key);
+                else
+                    return this;
+            }
         }
 
         void insert(KeyT key)
@@ -78,12 +118,41 @@ namespace trees {
     template <typename KeyT = int, typename Compare = std::less<KeyT>>
     class AVLtree 
     {
-    private:
         using NodeT = Node<KeyT>;
+        using IterT = NodeT*;
 
         size_t height_ = 0;
         size_t size_ = 0;
-        NodeT *root_ = nullptr;
+        IterT root_ = nullptr;
+
+        IterT lower_bound(KeyT key) const
+        {
+            return root_->lower_bound(key);
+        }
+
+        IterT upper_bound(KeyT key) const
+        {
+            return root_->upper_bound(key);
+        }
+
+        size_t distance(IterT it1, IterT it2) const
+        {
+            if (it1 == it2)
+                return 1;
+            
+            size_t count = 1;
+            if (it1->right_ != nullptr)
+            {
+                count += distance(it1->right_, it2);
+            }
+
+            if (it1->parent_ != nullptr)
+            {
+                count += distance(it1->parent_, it2);
+            }
+        
+            return count;
+        }
 
     public:
         AVLtree() = default;
@@ -107,10 +176,15 @@ namespace trees {
 
         size_t get_num_elems_from_diapason(KeyT key1, KeyT key2) const
         {
-            if (key1 > key2)
+            if (key1 > key2 || root_ == nullptr)
                 return 0;
-                
-            return root_ == nullptr ? 0 : root_->num_elems_from_diapason(key1, key2);
+        
+            IterT it1 = lower_bound(key1);
+            IterT it2 = upper_bound(key2);
+
+            std::cout << it1->key_ << " " << it2->key_ << std::endl;
+            
+            return distance(it1, it2);
         }
 
     }; // class AVL tree 
