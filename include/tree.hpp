@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <functional>
-
+#include <cassert>
 
 namespace trees {
 
@@ -30,17 +30,14 @@ namespace trees {
             delete right_;
         }
 
-        size_t num_less_elems(KeyT key)
+        size_t num_elems_from_diapason(KeyT key1, KeyT key2)
         {
-            if (key_ > key)
-                return 0;
+            size_t count = key1 <= key_ && key_ <= key2 ? 1 : 0;
 
-            size_t count = key_ < key ? 1 : 0;
-
-            if (left_ != nullptr)
-                count += left_->num_less_elems(key);
-            if (right_ != nullptr)
-                count += right_->num_less_elems(key);
+            if (key1 <= key_ && left_ != nullptr)
+                count += left_->num_elems_from_diapason(key1, key2);
+            if (key_ <= key2 && right_ != nullptr)
+                count += right_->num_elems_from_diapason(key1, key2);
 
             return count;
         }
@@ -108,9 +105,10 @@ namespace trees {
             height_++;
         }
 
-        size_t num_less_elems(KeyT key) const
+        size_t get_num_elems_from_diapason(KeyT key1, KeyT key2) const
         {
-            return root_ == nullptr ? 0 : root_->num_less_elems(key);
+            assert(key1 <= key2);
+            return root_ == nullptr ? 0 : root_->num_elems_from_diapason(key1, key2);
         }
 
     }; // class AVL tree 
