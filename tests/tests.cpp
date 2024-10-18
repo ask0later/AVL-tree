@@ -59,7 +59,7 @@ TEST(TREE_TESTS, test_4)
     ASSERT_EQ(tree.get_num_elems_from_diapason(5, 48), 44);
 }
 
-TEST(TREE_TESTS, test_4)
+TEST(TREE_TESTS, test_5)
 {
     trees::AVLtree<long long> tree;
     for (int i = 0; i < 10000; i++)
