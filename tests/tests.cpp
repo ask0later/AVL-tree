@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include "tree.hpp"
 
 TEST(TREE_TESTS, test_1)

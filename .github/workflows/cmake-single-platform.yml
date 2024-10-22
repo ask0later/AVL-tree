@@ -1,0 +1,39 @@
+# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
+name: CMake on a single platform
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Install google test and boost, also install g++-
+      run: sudo apt-get install libgtest-dev googletest googletest-tools google-mock libboost-dev g++
+  
+    - name: CMake release config
+      run: cmake -S . -B build -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Release
+    
+    - name: CMake release build
+      run: cmake --build build
+      
+    - name: CMake release test
+      run: env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target tests
+    
+    - name: CMake debug config
+      run: cmake -S . -B debug -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Debug
+    
+    - name: CMake debug build
+      run: cmake --build debug
+    
+    - name: CMake debug test
+      run: env CTEST_OUTPUT_ON_FAILURE=1 cmake --build debug --target tests
