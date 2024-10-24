@@ -66,3 +66,31 @@ TEST(TREE_TESTS, test_5)
 
     ASSERT_EQ(tree.get_num_elems_from_diapason(1000, 2050), 1051);
 }
+
+TEST(TREE_TESTS, test_6)
+{
+    trees::AVLtree<int> tree;
+    for (int i = 0; i < 1000; i++)
+        tree.insert(i);
+    
+    int i = 0;
+    for (auto it = tree.begin(); it != tree.end(); ++it)
+    {
+        ASSERT_EQ(i, *it);
+        i++;
+    }
+}
+
+TEST(TREE_TESTS, test_7)
+{
+    trees::AVLtree<int> tree;
+    for (int i = 0; i < 1000; i++)
+        tree.insert(i);
+    
+    int i = 0;
+    for (auto it = tree.begin(); it != tree.end(); ++it)
+    {
+        ASSERT_EQ(i, *it);
+        i++;
+    }
+}
