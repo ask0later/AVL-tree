@@ -32,8 +32,6 @@ namespace
                 std::cin >> temp1 >> temp2;
                 assert(std::cin.good());
 
-                tree.print();
-
                 answer_tree.push_back(tree.get_num_elems_from_diapason(temp1, temp2));
             }
         }
