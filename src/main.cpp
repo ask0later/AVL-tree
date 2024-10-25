@@ -1,5 +1,5 @@
 #include <iostream>
-#include <set>
+#include <vector>
 #include <cassert>
 
 #include "tree.hpp"
@@ -7,7 +7,7 @@
 namespace
 {
     template <typename KeyT>
-    void process_input(trees::AVLtree<KeyT> &tree, std::set<size_t> &answer_tree)
+    void process_input(trees::AVLtree<KeyT> &tree, std::vector<size_t> &answer_tree)
     {
         char command = 0;
         KeyT temp1{};
@@ -32,26 +32,24 @@ namespace
                 std::cin >> temp1 >> temp2;
                 assert(std::cin.good());
 
-                answer_tree.insert(tree.get_num_elems_from_diapason(temp1, temp2));
+                answer_tree.push_back(tree.get_num_elems_from_diapason(temp1, temp2));
             }
         }
     }
 
-    void print_answers(std::set<size_t> &answer_tree)
+    void print_answers(std::vector<size_t> &answer_tree)
     {
-        for (auto it = answer_tree.begin(), ite = answer_tree.end(); it != ite; ++it)
+        for (auto &elem : answer_tree)
         {
-            std::cout << *it;
+            std::cout << elem << std::endl;
         }
-
-        std::cout << std::endl;
     }
 }
 
 int main()
 {
     trees::AVLtree<int> tree;
-    std::set<size_t> answer_tree;
+    std::vector<size_t> answer_tree;
 
     process_input(tree, answer_tree);
     print_answers(answer_tree);
