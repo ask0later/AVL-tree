@@ -7,34 +7,54 @@
 namespace
 {
     template <typename KeyT>
-    void process_input(trees::AVLtree<KeyT> &tree)
+    void process_input(trees::AVLtree<KeyT> &tree, std::set<size_t> &answer_tree)
     {
-        /// TODO
+        char command = 0;
+        KeyT temp1{};
+        KeyT temp2{};
+
+        while (1)
+        {
+            std::cin >> command;
+
+            if (std::cin.eof())
+                return;
+
+            if (command == 'k')
+            {
+                std::cin >> temp1;
+                assert(std::cin.good());
+
+                tree.insert(temp1);
+            }
+            else if (command == 'q')
+            {
+                std::cin >> temp1 >> temp2;
+                assert(std::cin.good());
+
+                answer_tree.insert(tree.get_num_elems_from_diapason(temp1, temp2));
+            }
+        }
     }
 
-    template <typename T>
-    int range_query(const std::set<T>& s, T fst, T snd)
+    void print_answers(std::set<size_t> &answer_tree)
     {
-        using itt = typename std::set<T>::iterator;
-        itt start = s.lower_bound(fst);
-        itt fin = s.upper_bound(snd);
-        return std::distance(start, fin);
+        for (auto it = answer_tree.begin(), ite = answer_tree.end(); it != ite; ++it)
+        {
+            std::cout << *it;
+        }
+
+        std::cout << std::endl;
     }
 }
 
 int main()
 {
     trees::AVLtree<int> tree;
-    tree.insert(4);
-    tree.insert(2);
-    tree.insert(3);
-    tree.insert(2);
-    tree.insert(6);
-    tree.insert(1);
-    tree.insert(5);
-    tree.insert(0);
-    tree.insert(8);
+    std::set<size_t> answer_tree;
 
-    std::cout << tree.get_num_elems_from_diapason(2, 8) << std::endl;
+    process_input(tree, answer_tree);
+    print_answers(answer_tree);
 
+    return 0;
 }
