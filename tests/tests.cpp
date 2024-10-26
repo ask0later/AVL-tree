@@ -94,3 +94,16 @@ TEST(TREE_TESTS, test_7)
         i++;
     }
 }
+
+TEST(TREE_TESTS, test_8)
+{
+    trees::AVLtree<int> tree;
+    tree.insert(1);
+    tree.insert(2);
+    tree.insert(9);
+
+    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 3), 2);
+
+    tree.insert(3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 3), 3);
+}
