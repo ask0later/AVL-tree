@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include <cassert>
+#include <limits>
 
 namespace trees {
 
@@ -161,6 +162,7 @@ namespace trees {
         class Iterator
         {
         public:
+            KeyT POISON = std::numeric_limits<KeyT>::max();
             Iterator() = default;
             Iterator(Node<KeyT> *node, const AVLtree<KeyT, Compare> *tree) : node_(node), tree_(tree) {}
 
@@ -265,13 +267,14 @@ namespace trees {
             KeyT operator*()
             {
                 if (node_ == nullptr)
-                    return 7777;
+                    return POISON;
 
                 return node_->key_;
             }
         private:
             Node<KeyT> *node_;
-            const AVLtree<KeyT, Compare> *tree_;   
+            const AVLtree<KeyT, Compare> *tree_;
+
         }; // class Iterator;
 
     public:
@@ -299,13 +302,11 @@ namespace trees {
             Iterator it = begin();
             Iterator end_it = end();
 
-            for (; it != end_it && *it <= key; ++it)
+            for (; it != end_it && *it < key; ++it)
                 ;
 
-            if (it == end_it)
-                return end();
 
-            return --it;
+            return it;
         }
 
         Iterator upper_bound(KeyT key) const
@@ -313,18 +314,15 @@ namespace trees {
             Iterator it = back();
             Iterator end_it = end();
 
-            for (; it != end_it && *it >= key; --it)
+            for (; it != end_it && *it > key; --it)
                 ;
 
-            if (it == end_it)
-                return end();
-
-            return ++it;
+            return it;
         }
 
         size_t distance(Iterator it1, Iterator it2) const
         {
-            if (it1 == it2)
+            if (it1 == it2 || it1 == end() || it2 == end())
                 return 0;
 
             size_t count = 1;
