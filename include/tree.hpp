@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include <cassert>
+#include <limits>
 
 namespace trees {
 
@@ -161,6 +162,7 @@ namespace trees {
         class Iterator
         {
         public:
+            KeyT POISON = std::numeric_limits<KeyT>::max();
             Iterator() = default;
             Iterator(Node<KeyT> *node, const AVLtree<KeyT, Compare> *tree) : node_(node), tree_(tree) {}
 
@@ -265,13 +267,14 @@ namespace trees {
             KeyT operator*()
             {
                 if (node_ == nullptr)
-                    return 7777;
+                    return POISON;
 
                 return node_->key_;
             }
         private:
             Node<KeyT> *node_;
-            const AVLtree<KeyT, Compare> *tree_;   
+            const AVLtree<KeyT, Compare> *tree_;
+
         }; // class Iterator;
 
     public:
@@ -298,33 +301,36 @@ namespace trees {
         {
             Iterator it = begin();
             Iterator end_it = end();
+            Iterator back_it = back();
 
-            for (; it != end_it && *it <= key; ++it)
+            if (key > *back_it)
+                return end_it;
+
+            for (; it != end_it && *it < key; ++it)
                 ;
 
-            if (it == end_it)
-                return end();
 
-            return --it;
+            return it;
         }
 
         Iterator upper_bound(KeyT key) const
         {
             Iterator it = back();
             Iterator end_it = end();
+            Iterator front_it =  front();
 
-            for (; it != end_it && *it >= key; --it)
+            if (key < *front_it)
+                return end_it;
+
+            for (; it != end_it && *it > key; --it)
                 ;
 
-            if (it == end_it)
-                return end();
-
-            return ++it;
+            return it;
         }
 
         size_t distance(Iterator it1, Iterator it2) const
         {
-            if (it1 == it2)
+            if (it1 == end() || it2 == end() || *it1 > *it2)
                 return 0;
 
             size_t count = 1;
@@ -337,7 +343,7 @@ namespace trees {
         {
             if (key1 > key2 || root_ == nullptr)
                 return 0;
-
+            
             Iterator it1 = lower_bound(key1);
             Iterator it2 = upper_bound(key2);
 
