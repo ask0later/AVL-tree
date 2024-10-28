@@ -301,6 +301,10 @@ namespace trees {
         {
             Iterator it = begin();
             Iterator end_it = end();
+            Iterator back_it = back();
+
+            if (key > *back_it)
+                return end_it;
 
             for (; it != end_it && *it < key; ++it)
                 ;
@@ -313,6 +317,10 @@ namespace trees {
         {
             Iterator it = back();
             Iterator end_it = end();
+            Iterator front_it =  front();
+
+            if (key < *front_it)
+                return end_it;
 
             for (; it != end_it && *it > key; --it)
                 ;
@@ -322,7 +330,7 @@ namespace trees {
 
         size_t distance(Iterator it1, Iterator it2) const
         {
-            if (it1 == it2 || it1 == end() || it2 == end())
+            if (it1 == end() || it2 == end() || *it1 > *it2)
                 return 0;
 
             size_t count = 1;
@@ -335,7 +343,7 @@ namespace trees {
         {
             if (key1 > key2 || root_ == nullptr)
                 return 0;
-
+            
             Iterator it1 = lower_bound(key1);
             Iterator it2 = upper_bound(key2);
 
