@@ -20,20 +20,14 @@ jobs:
     - name: Install google test and boost, also install g++-
       run: sudo apt-get install libgtest-dev googletest googletest-tools google-mock libboost-dev g++
   
-    - name: CMake release config
-      run: cmake -S . -B build -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Release
-    
-    - name: CMake release build
-      run: cmake --build build
+    - name: CMake release config and build
+      run: cmake -S . -B build -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Release; cmake --build build
       
     - name: CMake release test
-      run: env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target tests
+      run: ctest --test-dir build
     
-    - name: CMake debug config
-      run: cmake -S . -B debug -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Debug
-    
-    - name: CMake debug build
-      run: cmake --build debug
+    - name: CMake debug config and build
+      run: cmake -S . -B debug -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Debug; cmake --build debug
     
     - name: CMake debug test
-      run: env CTEST_OUTPUT_ON_FAILURE=1 cmake --build debug --target tests
+      run: ctest --test-dir debug
