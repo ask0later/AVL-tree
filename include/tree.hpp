@@ -182,12 +182,12 @@ namespace trees {
                 return node_ != other.node_ || tree_ != other.tree_;
             }
 
-            Iterator operator++()
+            Iterator &operator++()
             {
                 if (*this == tree_->end() || *this == tree_->back())
                 {
                     *this = tree_->end();
-                    return tree_->end();
+                    return *this;
                 }
                 
                 if (node_->right_ != nullptr)
@@ -216,19 +216,19 @@ namespace trees {
                 return *this;
             }
 
-            Iterator operator++(int)
+            Iterator &operator++(int)
             {
                 Iterator it(*this);
                 ++(*this);
                 return it;
             }
 
-            Iterator operator--()
+            Iterator &operator--()
             {
                 if (*this == tree_->front())
                 {
                     *this = tree_->end();
-                    return tree_->end();
+                    return *this;
                 }
                 
                 if (node_->left_ != nullptr)
@@ -257,7 +257,7 @@ namespace trees {
                 return *this;
             }
 
-            Iterator operator--(int)
+            Iterator &operator--(int)
             {
                 Iterator it(*this);
                 --(*this);
