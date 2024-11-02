@@ -295,6 +295,18 @@ namespace trees {
         void insert(KeyT key)
         {
             root_ = Node<KeyT>::insert(key, root_, nullptr);
+
+            Node<KeyT> *front = root_, *back = root_;
+
+            while (front->left_ != nullptr)
+                front = front->left_;
+
+            front_ = front;
+            
+            while (back->right_ != nullptr)
+                back = back->right_;
+
+            back_ = back;
         }
 
         Iterator lower_bound(KeyT key) const
@@ -352,27 +364,12 @@ namespace trees {
 
         Iterator front() const
         {
-            if (root_ == nullptr)
-                return Iterator{nullptr, this};
-
-            Node<KeyT>* current = root_;
-            while (current->left_ != nullptr)
-                current = current->left_;
-
-            return Iterator{current, this};
+            return Iterator{front_, this};
         }
 
         Iterator back() const
         {
-            if (root_ == nullptr)
-                return Iterator{nullptr, this};
-            
-            Node<KeyT>* current = root_;
-
-            while (current->right_ != nullptr)
-                current = current->right_;
-
-            return Iterator{current, this};
+            return Iterator{back_, this};
         }
 
         Iterator begin() const
@@ -394,7 +391,9 @@ namespace trees {
     private:
         size_t height_ = 0;
         size_t size_ = 0;
-        Node<KeyT>* root_ = nullptr;
+        Node<KeyT> *root_ = nullptr;
+        Node<KeyT> *front_ = nullptr;
+        Node<KeyT> *back_ = nullptr;
     }; // class AVL tree 
 
 } // namespace tree
