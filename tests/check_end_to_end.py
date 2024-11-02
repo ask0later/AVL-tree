@@ -1,6 +1,8 @@
 from subprocess import run, Popen, PIPE
 from sys import executable
 
+
+
 num_test = 1
 is_ok = True
 for i in range(1, 11):
@@ -12,7 +14,7 @@ for i in range(1, 11):
     for i in open(str_ans):
         ans.append(int(i.strip()))
 	
-    result = run(["./build/src/main"], capture_output = True, encoding='cp866', stdin=file_in)
+    result = run(["build/src/main"], capture_output = True, encoding='cp866', stdin=file_in)
     print("Test: " + str(num_test).strip())
 
     res = list(map(int, result.stdout.split()))

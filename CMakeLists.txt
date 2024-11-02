@@ -9,12 +9,14 @@ option(WITH_BENCHMARKS "benchmarks" OFF)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=leak,address,undefined")
 
+enable_testing()
+
 add_subdirectory(src)
 
 if (WITH_TESTS)
     find_package(GTest CONFIG REQUIRED)
 
-    message("Build binary file for UNIT tests ...")
+    message("Build binary file for UNIT and End To End tests ...")
     add_subdirectory(tests)
 endif()
 
