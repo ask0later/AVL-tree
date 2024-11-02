@@ -80,15 +80,15 @@ void process_input(std::set<KeyT> &tree, std::vector<size_t> &answer_tree)
 
 } // namespace
 
-BENCHMARK(NumKeysFromDiapason, BenchSet, 1, 1) {
-    std::set<int> tree;
+BENCHMARK(NumKeysFromDiapason, BenchOurTree, 1, 1) {
+    trees::AVLtree<int> tree;
     std::vector<size_t> answer_tree;
 
     process_input(tree, answer_tree);
 }
 
-BENCHMARK(NumKeysFromDiapason, BenchOurTree, 1, 1) {
-    trees::AVLtree<int> tree;
+BENCHMARK(NumKeysFromDiapason, BenchSet, 1, 1) {
+    std::set<int> tree;
     std::vector<size_t> answer_tree;
 
     process_input(tree, answer_tree);
