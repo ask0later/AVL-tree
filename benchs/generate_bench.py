@@ -4,8 +4,8 @@ keys = []
 requests1 = []
 requests2 = []
 
-num_keys = 10000
-max_key = 1000
+num_keys = 30000
+max_key = 4000
 
 num_requests = num_keys * 3
 
