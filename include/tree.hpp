@@ -161,16 +161,11 @@ namespace trees {
     {
         class Iterator
         {
+            friend class AVLtree<KeyT, std::less<KeyT>>;
         public:
             KeyT POISON = std::numeric_limits<KeyT>::max();
             Iterator() = default;
             Iterator(Node<KeyT> *node, const AVLtree<KeyT, Compare> *tree) : node_(node), tree_(tree) {}
-
-            // Iterator(const Iterator &other) = delete;
-            // Iterator &operator=(const Iterator &other) = delete;
-
-            // Iterator(const Iterator &&other) = delete;
-            // Iterator &operator=(const Iterator &&other) = delete;
 
             bool operator==(Iterator& other)
             {
@@ -184,9 +179,9 @@ namespace trees {
 
             Iterator &operator++()
             {
-                if (*this == tree_->end() || *this == tree_->back())
+                if (node_ == nullptr || node_ == tree_->back_)
                 {
-                    *this = tree_->end();
+                    node_ = nullptr;
                     return *this;
                 }
                 
@@ -225,9 +220,9 @@ namespace trees {
 
             Iterator &operator--()
             {
-                if (*this == tree_->front())
+                if (node_ == tree_->front_)
                 {
-                    *this = tree_->end();
+                    node_ = nullptr;
                     return *this;
                 }
                 
@@ -271,6 +266,7 @@ namespace trees {
 
                 return node_->key_;
             }
+
         private:
             Node<KeyT> *node_;
             const AVLtree<KeyT, Compare> *tree_;
@@ -312,15 +308,13 @@ namespace trees {
         Iterator lower_bound(KeyT key) const
         {
             Iterator it = begin();
-            Iterator end_it = end();
-            Iterator back_it = back();
 
-            if (key > *back_it)
-                return end_it;
+            if (back_ != nullptr)
+                if (key > back_->key_)
+                    return Iterator{nullptr, this};
 
-            for (; it != end_it && *it < key; ++it)
+            for (; it.node_ != nullptr && it.node_->key_ < key; ++it)
                 ;
-
 
             return it;
         }
@@ -328,25 +322,24 @@ namespace trees {
         Iterator upper_bound(KeyT key) const
         {
             Iterator it = back();
-            Iterator end_it = end();
-            Iterator front_it =  front();
 
-            if (key < *front_it)
-                return end_it;
+            if (front_ != nullptr)
+                if (key < front_->key_)
+                    return Iterator{nullptr, this};
 
-            for (; it != end_it && *it > key; --it)
+            for (; it.node_ != nullptr && it.node_->key_ > key; --it)
                 ;
 
             return it;
         }
 
-        size_t distance(Iterator it1, Iterator it2) const
+        size_t distance(Iterator &it1, Iterator &it2) const
         {
-            if (it1 == end() || it2 == end() || *it1 > *it2)
+            if (it1.node_ == nullptr || it2.node_ == nullptr || *it1 > *it2)
                 return 0;
 
             size_t count = 1;
-            for (; it1 != it2; ++it1, ++count) ;
+            for (; it1.node_ != it2.node_; ++it1, ++count) ;
 
             return count;
         }
@@ -374,7 +367,7 @@ namespace trees {
 
         Iterator begin() const
         {
-            return front();
+            return Iterator{front_, this};
         }
 
         Iterator end() const
