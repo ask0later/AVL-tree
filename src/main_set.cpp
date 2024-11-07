@@ -40,8 +40,9 @@ namespace
     {
         for (auto &elem : answer_tree)
         {
-            std::cout << elem << std::endl;
+            std::cout << elem << " ";
         }
+        std::cout << std::endl;
     }
 }
 

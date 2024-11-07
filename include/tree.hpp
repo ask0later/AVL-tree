@@ -4,6 +4,7 @@
 #include <functional>
 #include <cassert>
 #include <limits>
+#include <string>
 
 namespace trees {
 
@@ -144,6 +145,18 @@ namespace trees {
                 right_->print_in_preorder();
         
             std::cout << ")";
+        }
+
+        void print_vertical(const std::string& prefix, bool is_left) const
+        {
+            std::cout << prefix;
+            std::cout << (is_left ? "├──" : "└──" );
+            std::cout << key_ << std::endl;
+
+            if (left_ != nullptr)
+                left_->print_vertical(prefix + (is_left ? "│   " : "    "), true);
+            if (right_ != nullptr)
+                right_->print_vertical(prefix + (is_left ? "│   " : "    "), false);
         }
 
     private:
@@ -378,6 +391,12 @@ namespace trees {
         void print() const 
         {
             root_->print_in_preorder();
+            std::cout << std::endl;
+        }
+
+        void print_vertical() const 
+        {
+            root_->print_vertical("", false);
             std::cout << std::endl;
         }
 
