@@ -6,6 +6,14 @@ This project is an implementation of the AVL tree, that can find num keys from d
 
 ## Build and Run
 
+Cloning repository:
+```
+git clone --recursive https://github.com/ask0later/AVL-tree
+git submodule update --init --recursive
+cd libhayai
+git fetch
+```
+
 If you want to build the project, write this in the project directory:
 ```
 cmake -S . -B build

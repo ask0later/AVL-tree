@@ -24,12 +24,7 @@ namespace trees {
                                                                                     left_(left),
                                                                                     right_(right),
                                                                                     height_(1) {}
-
-        ~Node()
-        {
-            delete left_;
-            delete right_;
-        }
+        ~Node() = default;
 
         static int height(Node *node) 
         { 
@@ -160,7 +155,6 @@ namespace trees {
         }
 
     private:
-    
         Node* left_ = nullptr;
         Node* right_ = nullptr;
         Node* parent_ = nullptr;
@@ -297,8 +291,14 @@ namespace trees {
         AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &&other) = delete;
 
         ~AVLtree()
-        {   
-            delete root_;
+        {
+            Iterator it_end = end();
+            std::vector<Node<KeyT>*> nodes;
+            for (Iterator it = begin(); it != it_end; ++it)
+                nodes.push_back(it.node_);
+
+            for (auto& node : nodes)
+                delete node;
         }
 
         void insert(KeyT key)
@@ -362,10 +362,20 @@ namespace trees {
             if (key1 > key2 || root_ == nullptr)
                 return 0;
             
-            Iterator it1 = lower_bound(key1);
-            Iterator it2 = upper_bound(key2);
+            size_t count = 0;
+            Iterator it_end = end();
 
-            return distance(it1, it2);
+            for (Iterator it = begin(); it != it_end; ++it)
+            {
+                if (key1 <= *it && *it <= key2)
+                    count++;
+
+                if (*it > key2)
+                    break;
+            }
+
+            return count;
+
         }
 
         Iterator front() const

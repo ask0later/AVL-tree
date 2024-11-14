@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 project(AVL-tree)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 option(WITH_TESTS "tests" OFF)
 option(WITH_BENCHMARKS "benchmarks" OFF)
 
