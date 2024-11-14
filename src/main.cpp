@@ -7,7 +7,7 @@
 namespace
 {
     template <typename KeyT>
-    void process_input(trees::AVLtree<KeyT> &tree, std::vector<size_t> &answer_tree)
+    bool process_input(trees::AVLtree<KeyT> &tree, std::vector<size_t> &answer_tree)
     {
         char command = 0;
         KeyT temp1{};
@@ -18,21 +18,27 @@ namespace
             std::cin >> command;
 
             if (std::cin.eof())
-                return;
+                return true;
 
             if (command == 'k')
             {
                 std::cin >> temp1;
-                assert(std::cin.good());
+                if (!std::cin.good())
+                    return false;
 
                 tree.insert(temp1);
             }
             else if (command == 'q')
             {
                 std::cin >> temp1 >> temp2;
-                assert(std::cin.good());
+                if (!std::cin.good())
+                    return false;
 
                 answer_tree.push_back(tree.get_num_elems_from_diapason(temp1, temp2));
+            }
+            else
+            {
+                return false;
             }
         }
     }
@@ -52,7 +58,11 @@ int main()
     trees::AVLtree<int> tree;
     std::vector<size_t> answer_tree;
 
-    process_input(tree, answer_tree);
+    if (!process_input(tree, answer_tree))
+    {
+        std::cout << "Incorrect input" << std::endl;
+        return 1;
+    }
     print_answers(answer_tree);
 
     return 0;
