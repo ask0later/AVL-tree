@@ -10,3 +10,4 @@ target_link_libraries(main tree_lib)
 
 add_executable(main_set main_set.cpp)
 target_compile_features(main_set PUBLIC cxx_std_20)
+target_link_libraries(main_set tree_lib)

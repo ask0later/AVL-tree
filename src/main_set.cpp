@@ -3,66 +3,24 @@
 #include <cassert>
 #include <set>
 
-namespace
-{
-    template <typename KeyT>
-    bool process_input(std::set<KeyT> &tree, std::vector<size_t> &answer_tree)
-    {
-        char command = 0;
-        KeyT temp1{};
-        KeyT temp2{};
-
-        while (1)
-        {
-            std::cin >> command;
-
-            if (std::cin.eof())
-                return true;
-
-            if (command == 'k')
-            {
-                std::cin >> temp1;
-                if (!std::cin.good())
-                    return false;
-
-                tree.insert(temp1);
-            }
-            else if (command == 'q')
-            {
-                std::cin >> temp1 >> temp2;
-                if (!std::cin.good())
-                    return false;
-
-                answer_tree.push_back(std::distance(tree.lower_bound(temp1), tree.upper_bound(temp2)));
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-
-    void print_answers(std::vector<size_t> &answer_tree)
-    {
-        for (auto &elem : answer_tree)
-        {
-            std::cout << elem << " ";
-        }
-        std::cout << std::endl;
-    }
-}
+#include "input_output.hpp"
 
 int main()
 {
     std::set<int> tree;
     std::vector<size_t> answer_tree;
 
-    if (!process_input(tree, answer_tree))
+    auto distance = [](std::set<int> &tree, int key1, int key2)
+                    {return std::distance(tree.lower_bound(key1), tree.upper_bound(key2));};
+    bool result = io::process_input<int, std::set<int>>(tree, answer_tree, distance, std::cin);
+
+    if (!result)
     {
         std::cout << "Incorrect input" << std::endl;
         return 1;
     }
-    print_answers(answer_tree);
+
+    io::print_answers(answer_tree);
 
     return 0;
 }
