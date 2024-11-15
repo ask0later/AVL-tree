@@ -112,21 +112,35 @@ TEST(TREE_TESTS, test_9)
 {
     trees::AVLtree<int> tree;
     tree.insert(1);
-    tree.print_vertical();
     tree.insert(2);
-    tree.print_vertical();
     tree.insert(3);
-    tree.print_vertical();
     tree.insert(5);
-    tree.print_vertical();
-    tree.insert(7);
-    tree.print_vertical();
-    tree.insert(9);
-    tree.print_vertical();
+    tree.insert(7);    
+    tree.insert(9);    
     tree.insert(8);
-
-    tree.print_vertical();
-
+    
     ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 3), 2);
     ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 5), 3);
+}
+
+
+TEST(TREE_TESTS, test_10)
+{
+    trees::AVLtree<int> tree;
+    tree.insert(1);
+    tree.insert(2);
+    tree.insert(3);
+    tree.insert(5);
+    tree.insert(7);
+    tree.insert(9);
+    tree.insert(8);
+    tree.insert(12);
+    tree.insert(-3);    
+    tree.insert(15);
+    tree.insert(10);
+    tree.insert(-5);
+    tree.insert(13);
+    tree.insert(0);
+
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 10), 7);
 }

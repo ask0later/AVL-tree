@@ -43,35 +43,21 @@ namespace trees {
             x = update_node(x);
 
             if (T2)
-            {
                 T2->parent_ = y;
-                y->count_left_childs_ = 1 + T2->count_left_childs_ + T2->count_right_childs_;
-            }
-            else
-            {
-                y->count_left_childs_ = 0;
-            }
+
+            y->count_left_childs_ = x->count_right_childs_;
+            x->count_right_childs_ = 1 + y->count_left_childs_ + y->count_right_childs_;
 
             x->parent_ = y->parent_;
             y->parent_ = x;
-
-            x->count_left_childs_ = 1 + y->count_left_childs_ + x->count_right_childs_;
-
-            if (x->parent_ != nullptr)
-            {
-                if (x == x->parent_->left_)
-                    x->parent_->count_left_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
-                else
-                    x->parent_->count_right_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
-            }
 
             return x; 
         } 
  
         static Node *rotate_left(Node *x)
         { 
-            Node *y = x->right_; 
-            Node *T2 = y->left_; 
+            Node *y = x->right_;
+            Node *T2 = y->left_;
 
             y->left_ = x;
             x->right_ = T2; 
@@ -80,27 +66,13 @@ namespace trees {
             y = update_node(y);
 
             if (T2)
-            {
                 T2->parent_ = x;
-                x->count_right_childs_ = 1 + T2->count_left_childs_ + T2->count_right_childs_;
-            }
-            else
-            {
-                x->count_right_childs_ = 0;
-            }
 
+            x->count_right_childs_ = y->count_left_childs_;
             y->count_left_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
 
             y->parent_ = x->parent_;
             x->parent_ = y;
-
-            if (y->parent_ != nullptr)
-            {
-                if (y == y->parent_->left_)
-                    y->parent_->count_left_childs_ = 1 + y->count_left_childs_ + y->count_right_childs_;
-                else
-                    y->parent_->count_right_childs_ = 1 + y->count_left_childs_ + y->count_right_childs_;
-            }
 
             return y; 
         } 
