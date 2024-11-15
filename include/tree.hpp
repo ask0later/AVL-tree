@@ -43,10 +43,27 @@ namespace trees {
             x = update_node(x);
 
             if (T2)
+            {
                 T2->parent_ = y;
+                y->count_left_childs_ = 1 + T2->count_left_childs_ + T2->count_right_childs_;
+            }
+            else
+            {
+                y->count_left_childs_ = 0;
+            }
 
             x->parent_ = y->parent_;
             y->parent_ = x;
+
+            x->count_left_childs_ = 1 + y->count_left_childs_ + x->count_right_childs_;
+
+            if (x->parent_ != nullptr)
+            {
+                if (x == x->parent_->left_)
+                    x->parent_->count_left_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
+                else
+                    x->parent_->count_right_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
+            }
 
             return x; 
         } 
@@ -63,9 +80,27 @@ namespace trees {
             y = update_node(y);
 
             if (T2)
+            {
                 T2->parent_ = x;
+                x->count_right_childs_ = 1 + T2->count_left_childs_ + T2->count_right_childs_;
+            }
+            else
+            {
+                x->count_right_childs_ = 0;
+            }
+
+            y->count_left_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
+
             y->parent_ = x->parent_;
             x->parent_ = y;
+
+            if (y->parent_ != nullptr)
+            {
+                if (y == y->parent_->left_)
+                    y->parent_->count_left_childs_ = 1 + y->count_left_childs_ + y->count_right_childs_;
+                else
+                    y->parent_->count_right_childs_ = 1 + y->count_left_childs_ + y->count_right_childs_;
+            }
 
             return y; 
         } 
@@ -112,17 +147,92 @@ namespace trees {
                 return new Node(key, parent);
 
             if (key < node->key_)
-                node->left_ = insert(key, node->left_, node); 
+            {
+                node->count_left_childs_++;
+                node->left_ = insert(key, node->left_, node);
+            }
             else if (key > node->key_) 
-                node->right_ = insert(key, node->right_, node); 
-            else 
+            {
+                node->count_right_childs_++;
+                node->right_ = insert(key, node->right_, node);
+            }
+            else
+            {
                 return node; 
+            }
             
             node = update_node(node);
             node = balance_node(key, node);
 
             return node; 
-        } 
+        }
+
+        Node* lower_bound_fast(KeyT key)
+        {
+            if (key_ == key)
+                return this;
+
+            if (key_ > key)
+            {
+                if (left_ == nullptr)
+                    return this;
+                if (left_->key_ < key)
+                    return this;
+                return left_->lower_bound_fast(key);
+            }
+
+            if (right_ == nullptr)
+                return nullptr;
+            return right_->lower_bound_fast(key);
+        }
+
+        Node* upper_bound_fast(KeyT key)
+        {
+            if (key_ == key)
+                return this;
+
+            if (key_ < key)
+            {
+                if (right_ == nullptr)
+                    return this;
+                if (right_->key_ < key)
+                    return this;
+                return right_->upper_bound_fast(key);
+            }
+
+            if (left_ == nullptr)
+                return nullptr;
+            return left_->upper_bound_fast(key);
+        }
+
+        size_t distance_fast(Node *node1, Node *node2)
+        {
+            if (this == node2)
+                return 1;
+            
+            size_t add = (node1->key_ <= key_ && key_ <= node2->key_) ? 1 : 0;
+
+            if (parent_ != nullptr)
+            {
+                if (parent_ == node2)
+                    return count_right_childs_ + 1;
+                
+                if (parent_->key_ > node2->key_)
+                {
+                    assert(right_ != nullptr);
+                    return add + right_->distance_fast(node1, node2);
+                }
+                else
+                {
+                    if (right_ != nullptr)
+                        return add + right_->distance_fast(node1, node2);
+                    
+                    return count_right_childs_ + parent_->distance_fast(node1, node2);
+                }
+            }
+
+            return add + right_->distance_fast(node1, node2);
+        }
         
         void print_in_preorder() const
         {
@@ -146,7 +256,7 @@ namespace trees {
         {
             std::cout << prefix;
             std::cout << (is_left ? "├──" : "└──" );
-            std::cout << key_ << std::endl;
+            std::cout << key_ << "(" << count_left_childs_ << ", " << count_right_childs_ << ")" << std::endl;
 
             if (left_ != nullptr)
                 left_->print_vertical(prefix + (is_left ? "│   " : "    "), true);
@@ -159,7 +269,9 @@ namespace trees {
         Node* right_ = nullptr;
         Node* parent_ = nullptr;
         int height_;
-        KeyT key_; 
+        KeyT key_;
+        size_t count_left_childs_ = 0;
+        size_t count_right_childs_ = 0;
 
     }; // class Node
 
@@ -375,7 +487,19 @@ namespace trees {
             }
 
             return count;
+        }
 
+        size_t get_num_elems_from_diapason_fast(KeyT key1, KeyT key2) const
+        {
+            if (key1 > key2 || root_ == nullptr)
+                return 0;
+            
+            Node<KeyT>* node1 = root_->lower_bound_fast(key1);
+            Node<KeyT>* node2 = root_->upper_bound_fast(key2);
+            if (node1 == nullptr || node2 == nullptr)
+                return 0;
+            
+            return node1->distance_fast(node1, node2);
         }
 
         Iterator front() const
