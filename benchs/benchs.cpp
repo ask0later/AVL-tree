@@ -14,7 +14,7 @@ BENCHMARK(NumKeysFromDiapason, BenchOurTree, 1, 1) {
     std::ifstream in("benchs/data.dat");
 
     auto distance = [](trees::AVLtree<int> &tree, int key1, int key2)
-                    {return tree.get_num_elems_from_diapason(key1, key2);};
+                    {return tree.get_num_elems_from_diapason_fast(key1, key2);};
     bool result = io::process_input<int, trees::AVLtree<int>>(tree, answer_tree, distance, in);
     in.close();
 

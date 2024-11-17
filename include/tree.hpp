@@ -113,23 +113,28 @@ namespace trees {
             return node;
         }
 
-        static Node *insert(KeyT key, Node *node, Node *parent) 
+        static Node *insert(KeyT key, Node *node, Node *parent, bool *inserted) 
         { 
             if (node == nullptr) 
                 return new Node(key, parent);
 
             if (key < node->key_)
             {
-                node->count_left_childs_++;
-                node->left_ = insert(key, node->left_, node);
+                node->left_ = insert(key, node->left_, node, inserted);
+                
+                if (*inserted)
+                    node->count_left_childs_++;
             }
             else if (key > node->key_) 
             {
-                node->count_right_childs_++;
-                node->right_ = insert(key, node->right_, node);
+                node->right_ = insert(key, node->right_, node, inserted);
+
+                if (*inserted)
+                    node->count_right_childs_++;                    
             }
             else
             {
+                *inserted = false;
                 return node; 
             }
             
@@ -139,71 +144,28 @@ namespace trees {
             return node; 
         }
 
-        Node* lower_bound_fast(KeyT key)
+        size_t count_bigger(Node<KeyT> *root)
         {
-            if (key_ == key)
-                return this;
+            Node<KeyT> *cur = root;
+            size_t count = 0;
 
-            if (key_ > key)
+            while (cur != nullptr)
             {
-                if (left_ == nullptr)
-                    return this;
-                if (left_->key_ < key)
-                    return this;
-                return left_->lower_bound_fast(key);
-            }
-
-            if (right_ == nullptr)
-                return nullptr;
-            return right_->lower_bound_fast(key);
-        }
-
-        Node* upper_bound_fast(KeyT key)
-        {
-            if (key_ == key)
-                return this;
-
-            if (key_ < key)
-            {
-                if (right_ == nullptr)
-                    return this;
-                if (right_->key_ < key)
-                    return this;
-                return right_->upper_bound_fast(key);
-            }
-
-            if (left_ == nullptr)
-                return nullptr;
-            return left_->upper_bound_fast(key);
-        }
-
-        size_t distance_fast(Node *node1, Node *node2)
-        {
-            if (this == node2)
-                return 1;
-            
-            size_t add = (node1->key_ <= key_ && key_ <= node2->key_) ? 1 : 0;
-
-            if (parent_ != nullptr)
-            {
-                if (parent_ == node2)
-                    return count_right_childs_ + 1;
-                
-                if (parent_->key_ > node2->key_)
+                if (cur->key_ > key_)
                 {
-                    assert(right_ != nullptr);
-                    return add + right_->distance_fast(node1, node2);
+                    count += cur->count_right_childs_ + 1;
+                    cur = cur->left_;
+                }
+                else if (cur->key_ < key_)
+                {
+                    cur = cur->right_;
                 }
                 else
                 {
-                    if (right_ != nullptr)
-                        return add + right_->distance_fast(node1, node2);
-                    
-                    return count_right_childs_ + parent_->distance_fast(node1, node2);
-                }
+                    return count + cur->count_right_childs_;
+                }  
             }
-
-            return add + right_->distance_fast(node1, node2);
+            return count;
         }
         
         void print_in_preorder() const
@@ -387,7 +349,8 @@ namespace trees {
 
         void insert(KeyT key)
         {
-            root_ = Node<KeyT>::insert(key, root_, nullptr);
+            bool inserted = true;
+            root_ = Node<KeyT>::insert(key, root_, nullptr, &inserted);
 
             Node<KeyT> *front = root_, *back = root_;
 
@@ -461,17 +424,73 @@ namespace trees {
             return count;
         }
 
+        Node<KeyT>* lower_bound_fast(KeyT key) const
+        {
+            Node<KeyT> *cur = root_;
+            Node<KeyT> *ans = root_;
+
+            while (cur != nullptr)
+            {
+                if (cur->key_ > key)
+                {
+                    ans = cur;
+                    cur = cur->left_; 
+                }
+                else if (cur->key_ < key)
+                {
+                    cur = cur->right_;
+                }
+                else
+                {
+                    return cur;
+                }
+            }
+
+            if (ans->key_ < key)
+                return nullptr;
+
+            return ans;
+        }
+
+        Node<KeyT>* upper_bound_fast(KeyT key) const
+        {
+            Node<KeyT> *cur = root_;
+            Node<KeyT> *ans = root_;
+
+            while (cur != nullptr)
+            {
+                if (cur->key_ < key)
+                {
+                    ans = cur;
+                    cur = cur->right_; 
+                }
+                else if (cur->key_ > key)
+                {
+                    cur = cur->left_;
+                }
+                else
+                {
+                    return cur;
+                }
+            }
+
+            if (ans->key_ > key)
+                return nullptr;
+                
+            return ans;
+        }
+
         size_t get_num_elems_from_diapason_fast(KeyT key1, KeyT key2) const
         {
             if (key1 > key2 || root_ == nullptr)
                 return 0;
-            
-            Node<KeyT>* node1 = root_->lower_bound_fast(key1);
-            Node<KeyT>* node2 = root_->upper_bound_fast(key2);
+
+            Node<KeyT>* node1 = lower_bound_fast(key1);
+            Node<KeyT>* node2 = upper_bound_fast(key2);
             if (node1 == nullptr || node2 == nullptr)
                 return 0;
-            
-            return node1->distance_fast(node1, node2);
+
+            return node1->count_bigger(root_) - node2->count_bigger(root_) + 1;
         }
 
         Iterator front() const

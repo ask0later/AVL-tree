@@ -5,7 +5,6 @@
 #include "tree.hpp"
 #include "input_output.hpp"
 
-
 int main()
 {
     trees::AVLtree<int> tree;
