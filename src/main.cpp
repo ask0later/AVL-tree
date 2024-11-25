@@ -18,7 +18,7 @@ int main()
     trees::AVLtree<int> tree;
 
     auto distance = [](trees::AVLtree<int> &tree, int key1, int key2)
-                    {return tree.get_num_elems_from_diapason_fast(key1, key2);};
+                    {return tree.get_num_elems_from_diapason(key1, key2);};
 
     std::vector<size_t> answer_tree = query::get_answers<int>(tree, queries, distance);
 

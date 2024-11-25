@@ -405,13 +405,13 @@ namespace trees {
             return count;
         }
 
-        size_t get_num_elems_from_diapason_fast(KeyT key1, KeyT key2) const
+        size_t get_num_elems_from_diapason(KeyT key1, KeyT key2) const
         {
             if (key1 > key2 || root_ == nullptr)
                 return 0;
 
-            Node* node1 = lower_bound_fast(key1);
-            Node* node2 = upper_bound_fast(key2);
+            Node* node1 = lower_bound_node(key1);
+            Node* node2 = upper_bound_node(key2);
             if (node1 == nullptr || node2 == nullptr)
                 return 0;
 
@@ -451,7 +451,7 @@ namespace trees {
         }
 
     private:
-        Node* lower_bound_fast(KeyT key) const
+        Node* lower_bound_node(KeyT key) const
         {
             Node *cur = root_;
             Node *ans = root_;
@@ -479,7 +479,7 @@ namespace trees {
             return ans;
         }
 
-        Node* upper_bound_fast(KeyT key) const
+        Node* upper_bound_node(KeyT key) const
         {
             Node *cur = root_;
             Node *ans = root_;
