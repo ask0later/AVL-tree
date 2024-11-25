@@ -14,7 +14,7 @@ TEST(TREE_TESTS, test_1)
     tree.insert(0);
     tree.insert(8);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(3, 5), 3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(3, 5), 3);
 }
 
 TEST(TREE_TESTS, test_2)
@@ -30,7 +30,7 @@ TEST(TREE_TESTS, test_2)
     tree.insert(0);
     tree.insert(8);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(8, 5), 0);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(8, 5), 0);
 }
 
 TEST(TREE_TESTS, test_3)
@@ -46,7 +46,7 @@ TEST(TREE_TESTS, test_3)
     tree.insert(0);
     tree.insert(8);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(10, 12), 0);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(10, 12), 0);
 }
 
 TEST(TREE_TESTS, test_4)
@@ -55,7 +55,7 @@ TEST(TREE_TESTS, test_4)
     for (int i = 0; i < 100; i++)
         tree.insert(i);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(5, 48), 44);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(5, 48), 44);
 }
 
 TEST(TREE_TESTS, test_5)
@@ -64,7 +64,7 @@ TEST(TREE_TESTS, test_5)
     for (int i = 0; i < 10000; i++)
         tree.insert(i);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(1000, 2050), 1051);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(1000, 2050), 1051);
 }
 
 TEST(TREE_TESTS, test_6)
@@ -102,10 +102,10 @@ TEST(TREE_TESTS, test_8)
     tree.insert(2);
     tree.insert(9);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 3), 2);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(1, 3), 2);
 
     tree.insert(3);
-    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 3), 3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(1, 3), 3);
 }
 
 TEST(TREE_TESTS, test_9)
