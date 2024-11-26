@@ -8,17 +8,11 @@
 
 namespace trees {
 
-    template <typename KeyT, typename Compare>
-    class AVLtree;
-
     template <typename KeyT = int, typename Compare = std::less<KeyT>>
     class AVLtree 
     {
-        class Node
-        {
-            friend class AVLtree<KeyT, std::less<KeyT>>;
-        
-        public:
+        struct Node
+        {        
             Node() = delete;
             Node(KeyT key) : key_(key), height_(1) {}
             Node(KeyT key, Node* parent, Node* left = nullptr, Node* right = nullptr) : key_(key),
@@ -200,7 +194,6 @@ namespace trees {
                     right_->print_vertical(prefix + (is_left ? "│   " : "    "), false);
             }
 
-        private:
             Node* left_ = nullptr;
             Node* right_ = nullptr;
             Node* parent_ = nullptr;
@@ -208,14 +201,11 @@ namespace trees {
             KeyT key_;
             size_t count_left_childs_ = 0;
             size_t count_right_childs_ = 0;
-
         }; // class Node
 
 
-        class Iterator
+        struct Iterator
         {
-            friend class AVLtree<KeyT, std::less<KeyT>>;
-        public:
             KeyT POISON = std::numeric_limits<KeyT>::max();
             Iterator() = default;
             Iterator(Node *node, const AVLtree<KeyT, Compare> *tree) : node_(node), tree_(tree) {}
@@ -320,10 +310,8 @@ namespace trees {
                 return node_->key_;
             }
 
-        private:
             Node *node_;
             const AVLtree<KeyT, Compare> *tree_;
-
         }; // class Iterator;
 
         
