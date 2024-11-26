@@ -119,17 +119,17 @@ TEST(TREE_TESTS, test_9)
     tree.insert(9);    
     tree.insert(8);
     
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 3), 2);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 5), 3);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 7), 4);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 8), 5);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 9), 6);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(1, 9), 7);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-1, 9), 7);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-1, 7), 5);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-1, 0), 0);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(15, 19), 0);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(8, 5), 0);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 3), 2);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 5), 3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 7), 4);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 8), 5);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 9), 6);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 9), 7);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-1, 9), 7);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-1, 7), 5);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-1, 0), 0);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(15, 19), 0);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(8, 5), 0);
 }
 
 
@@ -151,13 +151,13 @@ TEST(TREE_TESTS, test_10)
     tree.insert(13);
     tree.insert(0);
 
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(2, 10), 7);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-4, 14), 12);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-4, 25), 13);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(-10, 30), 14);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(4, 6), 1);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(4, 11), 5);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(12, 15), 3);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(8, 10), 3);
-    ASSERT_EQ(tree.get_num_elems_from_diapason_fast(12, 13), 2);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(2, 10), 7);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-4, 14), 12);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-4, 25), 13);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(-10, 30), 14);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(4, 6), 1);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(4, 11), 5);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(12, 15), 3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(8, 10), 3);
+    ASSERT_EQ(tree.get_num_elems_from_diapason(12, 13), 2);
 }
