@@ -17,12 +17,140 @@ namespace trees {
         {        
             Node() = delete;
             Node(KeyT key) : key_(key), height_(1) {}
-            Node(KeyT key, Node* parent, Node* left = nullptr, Node* right = nullptr) : key_(key),
-                                                                                        parent_(parent),
-                                                                                        left_(left),
-                                                                                        right_(right),
-                                                                                        height_(1) {}
+            Node(KeyT key, Node* parent, Node* left = nullptr, Node* right = nullptr) :
+                key_(key),
+                parent_(parent),
+                left_(left),
+                right_(right),
+                height_(1) {}
             ~Node() = default;
+
+            std::pair<Iterator, bool> insert(KeyT key)
+            {
+                std::pair<Iterator, bool> pair;
+
+                if (key < key_)
+                {
+                    if (!left_)
+                    {   
+                        count_left_childs_++;
+                        left_ = new Node(key, this);
+                        return {Iterator{left_, nullptr}, true};
+                    }
+                    
+                    pair = left_->insert(key);
+                    if (pair.second)
+                        count_left_childs_++;
+                }
+                else if (key > key_)
+                {
+                    if (!right_)
+                    {   
+                        count_right_childs_++;
+                        right_ = new Node(key, this);
+                        return {Iterator{right_, nullptr}, true};
+                    }
+                    
+                    pair = right_->insert(key);
+                    if (pair.second)
+                        count_right_childs_++;
+                }
+                else
+                {
+                    return {Iterator{this, nullptr}, false};
+                }
+
+                if (left_)
+                    left_->update_node();
+                if (right_)
+                    right_->update_node();
+
+                left_ = balance_node(key, left_);
+                right_ = balance_node(key, right_);                
+
+                return pair;
+            }
+
+            static Node *balance_node(KeyT key, Node* node)
+            {
+                int balance = balance_factor(node); 
+
+                if (balance > 1 && key < node->left_->key_) 
+                    return rotate_right(node); 
+
+                if (balance < -1 && key > node->right_->key_) 
+                    return rotate_left(node); 
+
+                if (balance > 1 && key > node->left_->key_)
+                { 
+                    node->left_ = rotate_left(node->left_); 
+                    return rotate_right(node); 
+                } 
+
+                if (balance < -1 && key < node->right_->key_)
+                { 
+                    node->right_ = rotate_right(node->right_); 
+                    return rotate_left(node); 
+                }
+
+                return node;
+            }
+
+            size_t count_bigger(Node *root)
+            {
+                Node *cur = root;
+                size_t count = 0;
+
+                while (cur != nullptr)
+                {
+                    if (cur->key_ > key_)
+                    {
+                        count += cur->count_right_childs_ + 1;
+                        cur = cur->left_;
+                    }
+                    else if (cur->key_ < key_)
+                    {
+                        cur = cur->right_;
+                    }
+                    else
+                    {
+                        return count + cur->count_right_childs_;
+                    }  
+                }
+                return count;
+            }
+            
+            void print_in_preorder() const
+            {
+                if (parent_)
+                    std::cout << "#" << key_ << " " << parent_->key_ << " " << height_ << "#" << "(";
+                else
+                    std::cout << "#" << key_ << " " << height_ << "#" << "(";
+
+                if (left_)
+                    left_->print_in_preorder();
+                
+                std::cout << ", ";
+
+                if (right_)
+                    right_->print_in_preorder();
+            
+                std::cout << ")";
+            }
+
+            void print_vertical(const std::string& prefix, bool is_left) const
+            {
+                std::cout << prefix;
+                std::cout << (is_left ? "├──" : "└──" );
+                std::cout << key_ << "(" << count_left_childs_ << ", " << count_right_childs_ << ")" << std::endl;
+
+                if (left_ != nullptr)
+                    left_->print_vertical(prefix + (is_left ? "│   " : "    "), true);
+                if (right_ != nullptr)
+                    right_->print_vertical(prefix + (is_left ? "│   " : "    "), false);
+            }
+
+        private:
 
             static int height(Node *node)
             {
@@ -86,131 +214,7 @@ namespace trees {
                 height_ = 1 + std::max(height(left_), height(right_)); 
             }
 
-            static Node *balance_node(KeyT key, Node* node)
-            {
-                int balance = balance_factor(node); 
-
-                if (balance > 1 && key < node->left_->key_) 
-                    return rotate_right(node); 
-
-                if (balance < -1 && key > node->right_->key_) 
-                    return rotate_left(node); 
-
-                if (balance > 1 && key > node->left_->key_)
-                { 
-                    node->left_ = rotate_left(node->left_); 
-                    return rotate_right(node); 
-                } 
-
-                if (balance < -1 && key < node->right_->key_)
-                { 
-                    node->right_ = rotate_right(node->right_); 
-                    return rotate_left(node); 
-                }
-
-                return node;
-            }
-
-            std::pair<Iterator, bool> insert(KeyT key)
-            {
-                std::pair<Iterator, bool> pair;
-
-                if (key < key_)
-                {
-                    if (!left_)
-                    {   
-                        count_left_childs_++;
-                        left_ = new Node(key, this);
-                        return {Iterator{left_, nullptr}, true};
-                    }
-                    
-                    pair = left_->insert(key);
-                    if (pair.second)
-                        count_left_childs_++;
-                }
-                else if (key > key_)
-                {
-                    if (!right_)
-                    {   
-                        count_right_childs_++;
-                        right_ = new Node(key, this);
-                        return {Iterator{right_, nullptr}, true};
-                    }
-                    
-                    pair = right_->insert(key);
-                    if (pair.second)
-                        count_right_childs_++;
-                }
-                else
-                {
-                    return {Iterator{this, nullptr}, false};
-                }
-
-                if (left_)
-                    left_->update_node();
-                if (right_)
-                    right_->update_node();
-
-                left_ = balance_node(key, left_);
-                right_ = balance_node(key, right_);                
-
-                return pair;
-            }
-
-            size_t count_bigger(Node *root)
-            {
-                Node *cur = root;
-                size_t count = 0;
-
-                while (cur != nullptr)
-                {
-                    if (cur->key_ > key_)
-                    {
-                        count += cur->count_right_childs_ + 1;
-                        cur = cur->left_;
-                    }
-                    else if (cur->key_ < key_)
-                    {
-                        cur = cur->right_;
-                    }
-                    else
-                    {
-                        return count + cur->count_right_childs_;
-                    }  
-                }
-                return count;
-            }
-            
-            void print_in_preorder() const
-            {
-                if (parent_)
-                    std::cout << "#" << key_ << " " << parent_->key_ << " " << height_ << "#" << "(";
-                else
-                    std::cout << "#" << key_ << " " << height_ << "#" << "(";
-
-                if (left_)
-                    left_->print_in_preorder();
-                
-                std::cout << ", ";
-
-                if (right_)
-                    right_->print_in_preorder();
-            
-                std::cout << ")";
-            }
-
-            void print_vertical(const std::string& prefix, bool is_left) const
-            {
-                std::cout << prefix;
-                std::cout << (is_left ? "├──" : "└──" );
-                std::cout << key_ << "(" << count_left_childs_ << ", " << count_right_childs_ << ")" << std::endl;
-
-                if (left_ != nullptr)
-                    left_->print_vertical(prefix + (is_left ? "│   " : "    "), true);
-                if (right_ != nullptr)
-                    right_->print_vertical(prefix + (is_left ? "│   " : "    "), false);
-            }
-
+        public:
             Node* left_ = nullptr;
             Node* right_ = nullptr;
             Node* parent_ = nullptr;
@@ -223,8 +227,69 @@ namespace trees {
         class Iterator
         {
         public:
+        
             Iterator() = default;
             Iterator(Node *node, const AVLtree<KeyT, Compare> *tree) : node_(node), tree_(tree) {}
+
+            Iterator &operator++()
+            {
+                if (node_ == nullptr || node_ == tree_->back_)
+                {
+                    node_ = nullptr;
+                    return *this;
+                }
+
+                return do_next_step(true);
+            }
+
+            Iterator &operator--()
+            {
+                if (node_ == tree_->front_)
+                {
+                    node_ = nullptr;
+                    return *this;
+                }
+                return do_next_step(false);
+            }
+
+            Iterator &operator++(int)
+            {
+                Iterator it(*this);
+                ++(*this);
+                return it;
+            }
+
+            Iterator &operator--(int)
+            {
+                Iterator it(*this);
+                --(*this);
+                return it;
+            }
+
+            KeyT operator*()
+            {
+                if (node_ == nullptr)
+                    throw std::out_of_range("Iterator is at post-end");
+
+                return node_->key_;
+            }
+
+            Node* get_node() const
+            {
+                return node_;
+            }
+
+            void set_tree(const AVLtree<KeyT, Compare> *tree)
+            {
+                tree_ = tree;
+            }
+
+            bool operator==(const Iterator& other) const
+            {
+                return node_ == other.node_ && tree_ == other.tree_;
+            }
+        
+        private:
 
             Iterator &do_next_step(const bool forward)
             {
@@ -281,65 +346,6 @@ namespace trees {
                 return *this;
             }
 
-            Iterator &operator++()
-            {
-                if (node_ == nullptr || node_ == tree_->back_)
-                {
-                    node_ = nullptr;
-                    return *this;
-                }
-
-                return do_next_step(true);
-            }
-
-            Iterator &operator--()
-            {
-                if (node_ == tree_->front_)
-                {
-                    node_ = nullptr;
-                    return *this;
-                }
-                return do_next_step(false);
-            }
-
-            Iterator &operator++(int)
-            {
-                Iterator it(*this);
-                ++(*this);
-                return it;
-            }
-
-            Iterator &operator--(int)
-            {
-                Iterator it(*this);
-                --(*this);
-                return it;
-            }
-
-            KeyT operator*()
-            {
-                if (node_ == nullptr)
-                    throw std::out_of_range("Iterator is at post-end");
-
-                return node_->key_;
-            }
-
-            Node* get_node() const
-            {
-                return node_;
-            }
-
-            void set_tree(const AVLtree<KeyT, Compare> *tree)
-            {
-                tree_ = tree;
-            }
-
-            bool operator==(Iterator& other) const
-            {
-                return node_ == other.node_ && tree_ == other.tree_;
-            }
-        
-        private:
             Node *node_ = nullptr;
             const AVLtree<KeyT, Compare> *tree_ = nullptr;
         }; // class Iterator;
@@ -385,21 +391,6 @@ namespace trees {
             update_front_back();
 
             return pair;
-        }
-
-        void update_front_back()
-        {
-            Node *front = root_, *back = root_;
-
-            while (front->left_ != nullptr)
-                front = front->left_;
-
-            front_ = front;
-            
-            while (back->right_ != nullptr)
-                back = back->right_;
-
-            back_ = back;
         }
 
         Iterator lower_bound(KeyT key) const
@@ -487,6 +478,21 @@ namespace trees {
         }
 
     private:
+        void update_front_back()
+        {
+            Node *front = root_, *back = root_;
+
+            while (front->left_ != nullptr)
+                front = front->left_;
+
+            front_ = front;
+            
+            while (back->right_ != nullptr)
+                back = back->right_;
+
+            back_ = back;
+        }
+
         Node* lower_bound_node(KeyT key) const
         {
             Node *cur = root_;
@@ -547,6 +553,6 @@ namespace trees {
         Node *root_ = nullptr;
         Node *front_ = nullptr;
         Node *back_ = nullptr;
-    }; // class AVL tree 
+    }; // class AVL tree
 
 } // namespace tree
