@@ -15,14 +15,26 @@ int main()
         return 1;
     }
 
-    trees::AVLtree<int> tree;
+    try {
+        trees::AVLtree<int> tree;
+        auto distance = [](trees::AVLtree<int> &tree, int key1, int key2)
+                        {return tree.get_num_elems_from_diapason(key1, key2);};
 
-    auto distance = [](trees::AVLtree<int> &tree, int key1, int key2)
-                    {return tree.get_num_elems_from_diapason(key1, key2);};
+        std::vector<size_t> answer_tree = query::get_answers<int>(tree, queries, distance);
 
-    std::vector<size_t> answer_tree = query::get_answers<int>(tree, queries, distance);
-
-    query::print_answers(answer_tree);
+        query::print_answers(answer_tree);
+    } catch (std::out_of_range &out_of_range_ex) {
+        std::cout << "Out of Range error: " << std::endl
+                  << out_of_range_ex.what() << std::endl;
+    } catch (std::logic_error &logic_ex) {
+        std::cout << "Logic error: " << std::endl
+                  << logic_ex.what() << std::endl;
+    } catch (std::bad_alloc &bad_alloc_ex) {
+        std::cout << "Bad alloc error: " << std::endl
+                  << bad_alloc_ex.what() << std::endl;
+    } catch (std::exception &ex) {
+        std::cout << "Exception: " << std::endl << ex.what() << std::endl;
+    }
 
     return 0;
 }
