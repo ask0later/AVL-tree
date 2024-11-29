@@ -9,12 +9,12 @@
 namespace trees {
 
     template <typename KeyT = int, typename Compare = std::less<KeyT>>
-    class AVLtree 
+    class AVLtree
     {
         class Iterator;
 
         struct Node
-        {        
+        {
             Node() = delete;
             Node(KeyT key) : key_(key), height_(1) {}
             Node(KeyT key, Node* parent, Node* left = nullptr, Node* right = nullptr) :
@@ -284,9 +284,9 @@ namespace trees {
                 tree_ = tree;
             }
 
-            bool operator==(const Iterator& other) const
+            friend bool operator==(const Iterator& lhs, const Iterator& rhs)
             {
-                return node_ == other.node_ && tree_ == other.tree_;
+                return lhs.node_ == rhs.node_ && lhs.tree_ == rhs.tree_;
             }
         
         private:
