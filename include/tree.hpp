@@ -33,8 +33,8 @@ namespace trees {
                 {
                     if (!left_)
                     {   
-                        count_left_childs_++;
                         left_ = new Node(key, this);
+                        count_left_childs_++;
                         return {Iterator{left_, nullptr}, true};
                     }
                     
@@ -46,8 +46,8 @@ namespace trees {
                 {
                     if (!right_)
                     {   
-                        count_right_childs_++;
                         right_ = new Node(key, this);
+                        count_right_childs_++;
                         return {Iterator{right_, nullptr}, true};
                     }
                     
@@ -157,52 +157,37 @@ namespace trees {
                 return node ? node->height_ : 0;
             }
 
-            static Node *rotate(Node *x, bool right)
+            static Node *rotate(Node **x, Node **first_node, Node **second_node, size_t *first_address, size_t *second_address)
             {
-                Node *y = nullptr;
-                Node *T2 = nullptr;
-                if (right)
-                {
-                    y = x->left_; 
-                    T2= y->right_;
-                    y->right_ = x;
-                    x->left_ = T2;
+                Node *y = *first_node;
+                Node *T2 = *second_node;
+                *second_node = *x;
+                *first_node = T2;
 
-                    x->count_left_childs_ = y->count_right_childs_;
-                    y->count_right_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;
-                }
-                else
-                {
-                    y = x->right_;
-                    T2 = y->left_;
-                    y->left_ = x;
-                    x->right_ = T2;
+                *first_address = *second_address;
+                *second_address = 1 + (*x)->count_left_childs_ + (*x)->count_right_childs_;
 
-                    x->count_right_childs_ = y->count_left_childs_;
-                    y->count_left_childs_ = 1 + x->count_left_childs_ + x->count_right_childs_;                    
-                }
-
-                x->update_node();
+                (*x)->update_node();
                 y->update_node();
 
                 if (T2)
-                    T2->parent_ = x;
+                    T2->parent_ = *x;
 
-                y->parent_ = x->parent_;
-                x->parent_ = y;
+                y->parent_ = (*x)->parent_;
+                (*x)->parent_ = y;
 
                 return y;
-            } 
-            
-            static Node *rotate_right(Node *x) 
-            { 
-                return rotate(x, true); 
-            } 
-    
+            }
+
+            static Node *rotate_right(Node *x)
+            {
+                return rotate(std::addressof(x), std::addressof(x->left_), std::addressof(x->left_->right_), std::addressof(x->count_left_childs_), std::addressof(x->left_->count_right_childs_));
+            }
+
             static Node *rotate_left(Node *x)
-            { 
-                return rotate(x, false); 
-            } 
+            {
+                return rotate(std::addressof(x), std::addressof(x->right_), std::addressof(x->right_->left_), std::addressof(x->count_right_childs_), std::addressof(x->right_->count_left_childs_));
+            }
 
             static int balance_factor(Node *node) 
             { 
@@ -317,8 +302,7 @@ namespace trees {
                     return *this;
                 }
 
-                if (node_->parent_ == nullptr)
-                    throw std::logic_error("Class invariance is broken");
+                assert(node_->parent_ != nullptr);
 
                 Node *parent = node_->parent_;
                 Node *current = node_;
@@ -338,8 +322,7 @@ namespace trees {
                     else
                         B = parent->left_;
                     
-                    if (parent == nullptr)
-                        throw std::logic_error("Class invariance is broken");
+                    assert(parent != nullptr);
                 }
 
                 node_ = parent;
@@ -442,7 +425,11 @@ namespace trees {
             if (node1 == nullptr || node2 == nullptr)
                 return 0;
 
-            return node1->count_bigger(root_) - node2->count_bigger(root_) + 1;
+            size_t count1 = node1->count_bigger(root_);
+            size_t count2 = node2->count_bigger(root_);
+
+            assert(count1 + 2U > count2);
+            return 1U + count1 - count2;
         }
 
         KeyT front() const
