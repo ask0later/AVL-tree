@@ -9,10 +9,10 @@
 namespace trees {
 
 template <typename KeyT = int, typename Compare = std::less<KeyT>>
-class AVLtree {
+class AVLtree final {
     class Iterator;
 
-    struct Node {
+    struct Node final {
         Node() = delete;
         Node(KeyT key) : key_(key), height_(1) {}
         Node(KeyT key, Node *parent, Node *left = nullptr,
@@ -21,12 +21,15 @@ class AVLtree {
               height_(1) {}
         ~Node() = default;
 
-        std::pair<Iterator, bool> insert(KeyT key) {
+        std::pair<Iterator, bool> insert(KeyT &key) {
+            if (key == key_)
+                return {Iterator{this, nullptr}, false};
+
             std::pair<Iterator, bool> pair;
 
             if (key < key_) {
                 if (!left_) {
-                    left_ = new Node(key, this);
+                    left_ = builder.get_obj(key, this);
                     count_left_childs_++;
                     return {Iterator{left_, nullptr}, true};
                 }
@@ -34,9 +37,9 @@ class AVLtree {
                 pair = left_->insert(key);
                 if (pair.second)
                     count_left_childs_++;
-            } else if (key > key_) {
+            } else {
                 if (!right_) {
-                    right_ = new Node(key, this);
+                    right_ = builder.get_obj(key, this);
                     count_right_childs_++;
                     return {Iterator{right_, nullptr}, true};
                 }
@@ -44,8 +47,6 @@ class AVLtree {
                 pair = right_->insert(key);
                 if (pair.second)
                     count_right_childs_++;
-            } else {
-                return {Iterator{this, nullptr}, false};
             }
 
             if (left_)
@@ -59,7 +60,7 @@ class AVLtree {
             return pair;
         }
 
-        static Node *balance_node(KeyT key, Node *node) {
+        static Node *balance_node(KeyT &key, Node *node) noexcept {
             int balance = balance_factor(node);
 
             if (balance > 1 && key < node->left_->key_)
@@ -133,50 +134,50 @@ class AVLtree {
         }
 
     private:
-        static int height(Node *node) { return node ? node->height_ : 0; }
+        static int height(Node *node) noexcept {
+            return node ? node->height_ : 0;
+        }
 
-        static Node *rotate(Node **x, Node **first_node, Node **second_node,
-                            size_t *first_address, size_t *second_address) {
-            Node *y = *first_node;
-            Node *T2 = *second_node;
-            *second_node = *x;
-            *first_node = T2;
+        static Node *rotate(Node *&x, Node *&first_node, Node *&second_node,
+                            size_t &first_address,
+                            size_t &second_address) noexcept {
+            auto y = first_node;
 
-            *first_address = *second_address;
-            *second_address =
-                1 + (*x)->count_left_childs_ + (*x)->count_right_childs_;
+            auto T2 = second_node;
+            second_node = x;
+            first_node = T2;
 
-            (*x)->update_node();
+            first_address = second_address;
+            second_address = 1 + x->count_left_childs_ + x->count_right_childs_;
+
+            x->update_node();
             y->update_node();
 
             if (T2)
-                T2->parent_ = *x;
+                T2->parent_ = x;
 
-            y->parent_ = (*x)->parent_;
-            (*x)->parent_ = y;
+            y->parent_ = x->parent_;
+            x->parent_ = y;
 
             return y;
         }
 
-        static Node *rotate_right(Node *x) {
-            return rotate(std::addressof(x), std::addressof(x->left_),
-                          std::addressof(x->left_->right_),
-                          std::addressof(x->count_left_childs_),
-                          std::addressof(x->left_->count_right_childs_));
+        static Node *rotate_right(Node *&x) noexcept {
+            return rotate(x, x->left_, x->left_->right_, x->count_left_childs_,
+                          x->left_->count_right_childs_);
         }
 
-        static Node *rotate_left(Node *x) {
-            return rotate(std::addressof(x), std::addressof(x->right_),
-                          std::addressof(x->right_->left_),
-                          std::addressof(x->count_right_childs_),
-                          std::addressof(x->right_->count_left_childs_));
+        static Node *rotate_left(Node *&x) noexcept {
+            return rotate(x, x->right_, x->right_->left_,
+                          x->count_right_childs_,
+                          x->right_->count_left_childs_);
         }
 
-        static int balance_factor(Node *node) {
+        static int balance_factor(Node *node) noexcept {
             return node ? (height(node->left_) - height(node->right_)) : 0;
         }
 
-        void update_node() {
+        void update_node() noexcept {
             height_ = 1 + std::max(height(left_), height(right_));
         }
 
@@ -190,36 +191,95 @@ class AVLtree {
         size_t count_right_childs_ = 0;
     }; // class Node
 
-    class Iterator {
+    class NodeBuilder final {
+    public:
+        Node *get_obj(KeyT key, Node *parent) {
+            auto tmp = new Node(key, parent);
+            buffer_.push_back(tmp);
+            return tmp;
+        }
+
+        void clean() noexcept {
+            for (auto &&tmp : buffer_)
+                delete tmp;
+            buffer_.clear();
+        }
+
+    private:
+        std::vector<Node *> buffer_;
+    }; // class NodeBuilder
+
+    class Iterator final {
     public:
         Iterator() = default;
         Iterator(Node *node, const AVLtree<KeyT, Compare> *tree)
             : node_(node), tree_(tree) {}
 
-        Iterator &operator++() {
+        Node *find_min(Node *node) const noexcept {
+            while (node && node->left_)
+                node = node->left_;
+            return node;
+        }
+
+        Node *find_max(Node *node) const noexcept {
+            while (node && node->right_)
+                node = node->right_;
+            return node;
+        }
+
+        Iterator &operator++() noexcept {
             if (node_ == nullptr || node_ == tree_->back_) {
                 node_ = nullptr;
                 return *this;
             }
 
-            return do_next_step(true);
+            if (node_->right_) {
+                node_ = find_min(node_->right_);
+                return *this;
+            }
+
+            assert(node_->parent_ != nullptr);
+            auto parent = node_->parent_;
+
+            while (parent && node_ == parent->right_) {
+                node_ = parent;
+                parent = parent->parent_;
+            }
+
+            node_ = parent;
+            return *this;
         }
 
-        Iterator &operator--() {
+        Iterator &operator--() noexcept {
             if (node_ == tree_->front_) {
                 node_ = nullptr;
                 return *this;
             }
-            return do_next_step(false);
+
+            if (node_->left_) {
+                node_ = find_max(node_->right_);
+                return *this;
+            }
+
+            assert(node_->parent_ != nullptr);
+            auto parent = node_->parent_;
+
+            while (parent && node_ == parent->left_) {
+                node_ = parent;
+                parent = parent->parent_;
+            }
+
+            node_ = parent;
+            return *this;
         }
 
-        Iterator &operator++(int) {
+        Iterator &operator++(int) noexcept {
             Iterator it(*this);
             ++(*this);
             return it;
         }
 
-        Iterator &operator--(int) {
+        Iterator &operator--(int) noexcept {
             Iterator it(*this);
             --(*this);
             return it;
@@ -232,69 +292,25 @@ class AVLtree {
             return node_->key_;
         }
 
-        Node *get_node() const { return node_; }
+        Node *get_node() const noexcept { return node_; }
 
-        void set_tree(const AVLtree<KeyT, Compare> *tree) { tree_ = tree; }
+        void set_tree(const AVLtree<KeyT, Compare> *tree) noexcept {
+            tree_ = tree;
+        }
 
-        friend bool operator==(const Iterator &lhs, const Iterator &rhs) {
+        friend bool operator==(const Iterator &lhs,
+                               const Iterator &rhs) noexcept {
             return lhs.node_ == rhs.node_ && lhs.tree_ == rhs.tree_;
         }
 
     private:
-        Iterator &do_next_step(const bool forward) {
-            Node *A = nullptr, *B = nullptr;
-
-            if (forward)
-                A = node_->right_;
-            else
-                A = node_->left_;
-
-            if (A != nullptr) {
-                node_ = A;
-                if (forward) {
-                    while (node_->left_ != nullptr)
-                        node_ = node_->left_;
-                } else {
-                    while (node_->right_ != nullptr)
-                        node_ = node_->right_;
-                }
-
-                return *this;
-            }
-
-            assert(node_->parent_ != nullptr);
-
-            Node *parent = node_->parent_;
-            Node *current = node_;
-
-            if (forward)
-                B = parent->right_;
-            else
-                B = parent->left_;
-
-            while (current == B) {
-                current = parent;
-                parent = parent->parent_;
-
-                if (forward)
-                    B = parent->right_;
-                else
-                    B = parent->left_;
-
-                assert(parent != nullptr);
-            }
-
-            node_ = parent;
-            return *this;
-        }
-
         Node *node_ = nullptr;
-        const AVLtree<KeyT, Compare> *tree_ = nullptr;
-    }; // class Iterator;
+        const AVLtree<KeyT, Compare> *tree_ = nullptr; // need think
+    };                                                 // class Iterator;
 
 public:
     AVLtree() = default;
-    AVLtree(KeyT key) : root_(new Node(key)), height_(1) {}
+    AVLtree(KeyT key) : root_(builder.get_obj(key, nullptr)), height_(1) {}
 
     AVLtree(const AVLtree<KeyT, Compare> &other) = delete;
     AVLtree<KeyT, Compare> &
@@ -303,22 +319,13 @@ public:
     AVLtree(AVLtree<KeyT, Compare> &&other) = delete;
     AVLtree<KeyT, Compare> &operator=(AVLtree<KeyT, Compare> &&other) = delete;
 
-    ~AVLtree() {
-        Iterator it_end = end();
-        std::vector<Node *> nodes;
-
-        for (Iterator it = begin(); it != it_end; ++it)
-            nodes.push_back(it.get_node());
-
-        for (auto &node : nodes)
-            delete node;
-    }
+    ~AVLtree() { builder.clean(); }
 
     std::pair<Iterator, bool> insert(KeyT key) {
         std::pair<Iterator, bool> pair;
 
         if (root_ == nullptr) {
-            root_ = new Node(key, nullptr);
+            root_ = builder.get_obj(key, nullptr);
             pair = {Iterator{root_, this}, true};
         } else {
             pair = root_->insert(key);
@@ -463,6 +470,10 @@ private:
     Node *root_ = nullptr;
     Node *front_ = nullptr;
     Node *back_ = nullptr;
+    static NodeBuilder builder;
 }; // class AVL tree
+
+template <typename KeyT, typename Compare>
+AVLtree<KeyT, Compare>::NodeBuilder AVLtree<KeyT, Compare>::builder;
 
 } // namespace trees
