@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v3
     
     - name: Install google test and boost, also install g++-
-      run: sudo apt-get install libgtest-dev googletest googletest-tools google-mock libboost-dev g++
+      run: sudo apt-get install libgtest-dev googletest google-mock libboost-dev g++
   
     - name: CMake release config and build
       run: cmake -S . -B build -DWITH_TESTS=1 -DCMAKE_BUILD_TYPE=Release; cmake --build build

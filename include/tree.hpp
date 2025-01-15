@@ -6,6 +6,28 @@
 #include <limits>
 #include <string>
 
+namespace {
+    template <typename T>
+    class Builder final {
+    public:
+        template <class... Args>
+        T *get_obj(Args... args) {
+            auto tmp = new T{args...};
+            buffer_.push_back(tmp);
+            return tmp;
+        }
+
+        void clean() noexcept {
+            for (auto &&tmp : buffer_)
+                delete tmp;
+            buffer_.clear();
+        }
+
+    private:
+        std::vector<T *> buffer_;
+    }; // class Builder
+}
+
 namespace trees {
 
 template <typename KeyT = int, typename Compare = std::less<KeyT>>
@@ -21,9 +43,9 @@ class AVLtree final {
               height_(1) {}
         ~Node() = default;
 
-        std::pair<Iterator, bool> insert(KeyT &key) {
+        std::pair<Iterator, bool> insert(KeyT &key, AVLtree<KeyT, Compare> *tree) {
             if (key == key_)
-                return {Iterator{this, nullptr}, false};
+                return {Iterator{this, tree}, false};
 
             std::pair<Iterator, bool> pair;
 
@@ -31,20 +53,20 @@ class AVLtree final {
                 if (!left_) {
                     left_ = builder.get_obj(key, this);
                     count_left_childs_++;
-                    return {Iterator{left_, nullptr}, true};
+                    return {Iterator{left_, tree}, true};
                 }
 
-                pair = left_->insert(key);
+                pair = left_->insert(key, tree);
                 if (pair.second)
                     count_left_childs_++;
             } else {
                 if (!right_) {
                     right_ = builder.get_obj(key, this);
                     count_right_childs_++;
-                    return {Iterator{right_, nullptr}, true};
+                    return {Iterator{right_, tree}, true};
                 }
 
-                pair = right_->insert(key);
+                pair = right_->insert(key, tree);
                 if (pair.second)
                     count_right_childs_++;
             }
@@ -191,24 +213,6 @@ class AVLtree final {
         size_t count_right_childs_ = 0;
     }; // class Node
 
-    class NodeBuilder final {
-    public:
-        Node *get_obj(KeyT key, Node *parent) {
-            auto tmp = new Node(key, parent);
-            buffer_.push_back(tmp);
-            return tmp;
-        }
-
-        void clean() noexcept {
-            for (auto &&tmp : buffer_)
-                delete tmp;
-            buffer_.clear();
-        }
-
-    private:
-        std::vector<Node *> buffer_;
-    }; // class NodeBuilder
-
     class Iterator final {
     public:
         Iterator() = default;
@@ -294,10 +298,6 @@ class AVLtree final {
 
         Node *get_node() const noexcept { return node_; }
 
-        void set_tree(const AVLtree<KeyT, Compare> *tree) noexcept {
-            tree_ = tree;
-        }
-
         friend bool operator==(const Iterator &lhs,
                                const Iterator &rhs) noexcept {
             return lhs.node_ == rhs.node_ && lhs.tree_ == rhs.tree_;
@@ -305,7 +305,7 @@ class AVLtree final {
 
     private:
         Node *node_ = nullptr;
-        const AVLtree<KeyT, Compare> *tree_ = nullptr; // need think
+        const AVLtree<KeyT, Compare> *tree_;
     };                                                 // class Iterator;
 
 public:
@@ -328,9 +328,8 @@ public:
             root_ = builder.get_obj(key, nullptr);
             pair = {Iterator{root_, this}, true};
         } else {
-            pair = root_->insert(key);
+            pair = root_->insert(key, this);
             root_ = Node::balance_node(key, root_);
-            pair.first.set_tree(this);
         }
 
         update_front_back();
@@ -470,10 +469,10 @@ private:
     Node *root_ = nullptr;
     Node *front_ = nullptr;
     Node *back_ = nullptr;
-    static NodeBuilder builder;
+    static Builder<Node> builder;
 }; // class AVL tree
 
 template <typename KeyT, typename Compare>
-AVLtree<KeyT, Compare>::NodeBuilder AVLtree<KeyT, Compare>::builder;
+Builder<typename trees::AVLtree<KeyT, Compare>::Node> AVLtree<KeyT, Compare>::builder;
 
 } // namespace trees
