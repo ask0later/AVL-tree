@@ -148,3 +148,41 @@ TEST(TREE_TESTS, test_10) {
     ASSERT_EQ(tree.get_num_elems_from_diapason(8, 10), 3);
     ASSERT_EQ(tree.get_num_elems_from_diapason(12, 13), 2);
 }
+
+TEST(TREE_TESTS, test_11) {
+    trees::AVLtree<int> tree1;
+    tree1.insert(1);
+    tree1.insert(2);
+    tree1.insert(3);
+    tree1.insert(4);
+    tree1.insert(5);
+
+    ASSERT_EQ(tree1.get_num_elems_from_diapason(1, 5), 5);
+
+    auto tree2{tree1};
+    tree2.insert(6);
+    ASSERT_EQ(tree2.get_num_elems_from_diapason(1, 6), 6);
+
+    trees::AVLtree<int> tree3;
+    tree3.insert(6);
+    tree3 = tree1;
+    ASSERT_EQ(tree3.get_num_elems_from_diapason(1, 6), 5);
+}
+
+TEST(TREE_TESTS, test_12) {
+    trees::AVLtree<int> tree1;
+    tree1.insert(1);
+    tree1.insert(2);
+    tree1.insert(3);
+    tree1.insert(4);
+    tree1.insert(5);
+
+    ASSERT_EQ(tree1.get_num_elems_from_diapason(1, 5), 5);
+
+    auto tree2{std::move(tree1)};
+    ASSERT_EQ(tree2.get_num_elems_from_diapason(1, 5), 5);
+    trees::AVLtree<int> tree3;
+    tree3.insert(6);
+    tree3 = std::move(tree2);
+    ASSERT_EQ(tree3.get_num_elems_from_diapason(1, 6), 5);
+}

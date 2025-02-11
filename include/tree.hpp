@@ -4,29 +4,23 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <string>
 
 namespace {
-    template <typename T>
-    class Builder final {
-    public:
-        template <class... Args>
-        T *get_obj(Args... args) {
-            auto tmp = new T{args...};
-            buffer_.push_back(tmp);
-            return tmp;
-        }
+template <typename T> class Builder final {
+public:
+    template <class... Args> T *get_obj(Args... args) {
+        auto tmp = std::make_unique<T>(std::forward<Args>(args)...);
+        auto raw_ptr = tmp.get();
+        buffer_.push_back(std::move(tmp));
+        return raw_ptr;
+    }
 
-        void clean() noexcept {
-            for (auto &&tmp : buffer_)
-                delete tmp;
-            buffer_.clear();
-        }
-
-    private:
-        std::vector<T *> buffer_;
-    }; // class Builder
-}
+private:
+    std::vector<std::unique_ptr<T>> buffer_;
+}; // class Builder
+} // namespace
 
 namespace trees {
 
@@ -43,7 +37,9 @@ class AVLtree final {
               height_(1) {}
         ~Node() = default;
 
-        std::pair<Iterator, bool> insert(KeyT &key, AVLtree<KeyT, Compare> *tree) {
+        std::pair<Iterator, bool> insert(KeyT &key,
+                                         AVLtree<KeyT, Compare> *tree,
+                                         Builder<Node> &builder) {
             if (key == key_)
                 return {Iterator{this, tree}, false};
 
@@ -56,7 +52,7 @@ class AVLtree final {
                     return {Iterator{left_, tree}, true};
                 }
 
-                pair = left_->insert(key, tree);
+                pair = left_->insert(key, tree, builder);
                 if (pair.second)
                     count_left_childs_++;
             } else {
@@ -66,7 +62,7 @@ class AVLtree final {
                     return {Iterator{right_, tree}, true};
                 }
 
-                pair = right_->insert(key, tree);
+                pair = right_->insert(key, tree, builder);
                 if (pair.second)
                     count_right_childs_++;
             }
@@ -306,29 +302,38 @@ class AVLtree final {
     private:
         Node *node_ = nullptr;
         const AVLtree<KeyT, Compare> *tree_;
-    };                                                 // class Iterator;
+    }; // class Iterator;
 
 public:
     AVLtree() = default;
-    AVLtree(KeyT key) : root_(builder.get_obj(key, nullptr)), height_(1) {}
+    AVLtree(KeyT key) : root_(builder_.get_obj(key, nullptr)), height_(1) {}
 
-    AVLtree(const AVLtree<KeyT, Compare> &other) = delete;
+    AVLtree(const AVLtree<KeyT, Compare> &other) : height_(other.height_) {
+        root_ = copy_subtree(other.root_, nullptr);
+    }
+
+    AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &other) {
+        if (this != &other) {
+            auto tmp{other};
+            std::swap(*this, tmp);
+        }
+
+        return *this;
+    }
+
+    AVLtree(AVLtree<KeyT, Compare> &&other) noexcept = default;
     AVLtree<KeyT, Compare> &
-    operator=(const AVLtree<KeyT, Compare> &other) = delete;
-
-    AVLtree(AVLtree<KeyT, Compare> &&other) = delete;
-    AVLtree<KeyT, Compare> &operator=(AVLtree<KeyT, Compare> &&other) = delete;
-
-    ~AVLtree() { builder.clean(); }
+    operator=(AVLtree<KeyT, Compare> &&other) noexcept = default;
+    ~AVLtree() = default;
 
     std::pair<Iterator, bool> insert(KeyT key) {
         std::pair<Iterator, bool> pair;
 
         if (root_ == nullptr) {
-            root_ = builder.get_obj(key, nullptr);
+            root_ = builder_.get_obj(key, nullptr);
             pair = {Iterator{root_, this}, true};
         } else {
-            pair = root_->insert(key, this);
+            pair = root_->insert(key, this, builder_);
             root_ = Node::balance_node(key, root_);
         }
 
@@ -465,14 +470,24 @@ private:
         return ans;
     }
 
+    Node *copy_subtree(Node *copy_node, Node *parent) {
+        if (!copy_node)
+            return nullptr;
+
+        Node *new_node = builder_.get_obj(copy_node->key_);
+        *new_node = *copy_node;
+        new_node->parent_ = parent;
+
+        new_node->left_ = copy_subtree(copy_node->left_, new_node);
+        new_node->right_ = copy_subtree(copy_node->right_, new_node);
+        return new_node;
+    }
+
     size_t height_ = 0;
     Node *root_ = nullptr;
     Node *front_ = nullptr;
     Node *back_ = nullptr;
-    static Builder<Node> builder;
+    Builder<Node> builder_;
 }; // class AVL tree
-
-template <typename KeyT, typename Compare>
-Builder<typename trees::AVLtree<KeyT, Compare>::Node> AVLtree<KeyT, Compare>::builder;
 
 } // namespace trees
