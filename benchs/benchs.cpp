@@ -18,7 +18,7 @@ BENCHMARK(NumKeysFromDiapason, BenchOurTree, 1, 1) {
     };
 
     std::vector<size_t> answer_tree =
-        query::get_answers<int>(tree, queries, distance);
+        query::get_answers<int>(tree, queries.begin(), queries.end(), distance);
 }
 
 BENCHMARK(NumKeysFromDiapason, BenchSet, 1, 1) {
@@ -29,7 +29,7 @@ BENCHMARK(NumKeysFromDiapason, BenchSet, 1, 1) {
     };
 
     std::vector<size_t> answer_tree =
-        query::get_answers<int>(tree, queries, distance);
+        query::get_answers<int>(tree, queries.begin(), queries.end(), distance);
 }
 
 int main() {
