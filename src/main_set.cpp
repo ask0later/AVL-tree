@@ -20,8 +20,8 @@ int main() {
                                  tree.upper_bound(key2));
         };
 
-        std::vector<size_t> answer_tree =
-            query::get_answers<int>(tree, queries, distance);
+        std::vector<size_t> answer_tree = query::get_answers<int>(
+            tree, queries.begin(), queries.end(), distance);
 
         query::print_answers(answer_tree);
     } catch (std::out_of_range &out_of_range_ex) {
