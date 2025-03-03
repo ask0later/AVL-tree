@@ -6,17 +6,22 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <stack>
 
 namespace {
 template <typename T> class Builder final {
 public:
-    template <class... Args> T *get_obj(Args... args) {
+    template <class... Args> T *get_obj(Args&&... args) {
         auto tmp = std::make_unique<T>(std::forward<Args>(args)...);
         auto raw_ptr = tmp.get();
         buffer_.push_back(std::move(tmp));
         return raw_ptr;
     }
 
+    // template <class... Args>
+    // void emplace_back(Args&&... args) {
+    //     buffer_.emplace_back(std::forward<Args>(args)...);
+    // }
 private:
     std::vector<std::unique_ptr<T>> buffer_;
 }; // class Builder
@@ -35,50 +40,67 @@ class AVLtree final {
              Node *right = nullptr)
             : key_(key), parent_(parent), left_(left), right_(right),
               height_(1) {}
-        ~Node() = default;
 
-        std::pair<Iterator, bool> insert(KeyT &key,
-                                         AVLtree<KeyT, Compare> *tree,
-                                         Builder<Node> &builder) {
-            if (key == key_)
-                return {Iterator{this, tree}, false};
+        std::pair<Node*, bool> find(const KeyT &key) const {
+            Node* current = const_cast<Node*>(this);
+            Node* parent = nullptr;
+            bool is_left = false;
+            
+            while (current != nullptr) {
+                if (key == current->key_)
+                    return {nullptr, false};
 
-            std::pair<Iterator, bool> pair;
-
-            if (key < key_) {
-                if (!left_) {
-                    left_ = builder.get_obj(key, this);
-                    count_left_childs_++;
-                    return {Iterator{left_, tree}, true};
+                if (key < current->key_) {
+                    parent = current;
+                    current = current->left_;
+                    is_left = true;
+                } else {
+                    parent = current;
+                    current = current->right_;
+                    is_left = false;
                 }
-
-                pair = left_->insert(key, tree, builder);
-                if (pair.second)
-                    count_left_childs_++;
-            } else {
-                if (!right_) {
-                    right_ = builder.get_obj(key, this);
-                    count_right_childs_++;
-                    return {Iterator{right_, tree}, true};
-                }
-
-                pair = right_->insert(key, tree, builder);
-                if (pair.second)
-                    count_right_childs_++;
             }
 
-            if (left_)
-                left_->update_node();
-            if (right_)
-                right_->update_node();
-
-            left_ = balance_node(key, left_);
-            right_ = balance_node(key, right_);
-
-            return pair;
+            return {parent, is_left};
         }
 
-        static Node *balance_node(KeyT &key, Node *node) noexcept {
+        std::pair<Iterator, bool> insert(const KeyT &key, AVLtree &tree, Builder<Node> &buffer) {
+            auto [parent, is_left] = find(key);
+            if (!parent)
+                return {Iterator{this, tree}, false};
+
+            auto new_node = buffer.get_obj(key);
+            new_node->parent_ = parent;
+            if (is_left) 
+                parent->left_ = new_node;
+            else
+                parent->right_ = new_node;
+
+            parent = new_node->parent_;
+            auto current = new_node;
+
+            while (parent) {
+                if (parent->left_ == current)
+                    parent->count_left_childs_++;
+                else if (parent->right_ == current)
+                    parent->count_right_childs_++;
+
+                if (current->left_)
+                    current->left_->update_node();
+                if (current->right_)
+                    current->right_->update_node();
+
+                current->left_ = balance_node(key, current->left_);
+                current->right_ = balance_node(key, current->right_);
+
+                current = parent;
+                parent = parent->parent_;
+            }
+
+            return {Iterator{new_node, tree}, true};
+        }
+
+        static Node *balance_node(const KeyT &key, Node *node) noexcept {
             int balance = balance_factor(node);
 
             if (balance > 1 && key < node->left_->key_)
@@ -152,6 +174,16 @@ class AVLtree final {
         }
 
     private:
+        void update_and_balance(const KeyT &key) {
+            if (left_)
+                left_->update_node();
+            if (right_)
+                right_->update_node();
+
+            left_ = balance_node(key, left_);
+            right_ = balance_node(key, right_);
+        }
+
         static int height(Node *node) noexcept {
             return node ? node->height_ : 0;
         }
@@ -212,7 +244,7 @@ class AVLtree final {
     class Iterator final {
     public:
         Iterator() = default;
-        Iterator(Node *node, const AVLtree<KeyT, Compare> *tree)
+        Iterator(Node *node, const AVLtree<KeyT, Compare> &tree)
             : node_(node), tree_(tree) {}
 
         Node *find_min(Node *node) const noexcept {
@@ -228,7 +260,7 @@ class AVLtree final {
         }
 
         Iterator &operator++() noexcept {
-            if (node_ == nullptr || node_ == tree_->back_) {
+            if (node_ == nullptr || node_ == tree_.back_) {
                 node_ = nullptr;
                 return *this;
             }
@@ -251,7 +283,7 @@ class AVLtree final {
         }
 
         Iterator &operator--() noexcept {
-            if (node_ == tree_->front_) {
+            if (node_ == tree_.front_) {
                 node_ = nullptr;
                 return *this;
             }
@@ -296,20 +328,49 @@ class AVLtree final {
 
         friend bool operator==(const Iterator &lhs,
                                const Iterator &rhs) noexcept {
-            return lhs.node_ == rhs.node_ && lhs.tree_ == rhs.tree_;
+            return lhs.node_ == rhs.node_ && &lhs.tree_ == &rhs.tree_;
         }
 
     private:
         Node *node_ = nullptr;
-        const AVLtree<KeyT, Compare> *tree_;
+        const AVLtree<KeyT, Compare> &tree_;
     }; // class Iterator;
 
 public:
     AVLtree() = default;
-    AVLtree(KeyT key) : root_(builder_.get_obj(key, nullptr)), height_(1) {}
+    AVLtree(KeyT key) : root_(builder_.get_obj(key, nullptr)) {}
 
-    AVLtree(const AVLtree<KeyT, Compare> &other) : height_(other.height_) {
-        root_ = copy_subtree(other.root_, nullptr);
+    AVLtree(const AVLtree<KeyT, Compare> &other) {
+        if (other.root_ == nullptr) {
+            return;
+        }
+
+        root_ = builder_.get_obj(other.root_->key_);
+        root_->height_ = other.root_->height_;
+
+        std::stack<std::pair<Node*, Node*>> stack;
+        stack.push({other.root_, root_});
+
+        while (!stack.empty()) {
+            auto [original, copy] = stack.top();
+            copy->count_left_childs_ = original->count_left_childs_;
+            copy->count_right_childs_ = original->count_right_childs_;
+            stack.pop();
+
+            if (original->left_) {
+                copy->left_ = builder_.get_obj(original->left_->key_);
+                copy->left_->parent_ = copy;
+                copy->left_->height_ = original->left_->height_;
+                stack.push({original->left_, copy->left_});
+            }
+
+            if (original->right_) {
+                copy->right_ = builder_.get_obj(original->right_->key_);
+                copy->right_->parent_ = copy;
+                copy->right_->height_ = original->right_->height_;
+                stack.push({original->right_, copy->right_});
+            }
+        }
     }
 
     AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &other) {
@@ -326,23 +387,20 @@ public:
     operator=(AVLtree<KeyT, Compare> &&other) noexcept = default;
     ~AVLtree() = default;
 
-    std::pair<Iterator, bool> insert(KeyT key) {
-        std::pair<Iterator, bool> pair;
-
+    std::pair<Iterator, bool> insert(const KeyT &key) {
         if (root_ == nullptr) {
             root_ = builder_.get_obj(key, nullptr);
-            pair = {Iterator{root_, this}, true};
-        } else {
-            pair = root_->insert(key, this, builder_);
-            root_ = Node::balance_node(key, root_);
+            update_front_back();
+            return {Iterator{root_, *this}, true};
         }
-
+        
+        root_ = Node::balance_node(key, root_);
         update_front_back();
 
-        return pair;
+        return root_->insert(key, *this, builder_);
     }
 
-    Iterator lower_bound(KeyT key) const {
+    Iterator lower_bound(const KeyT &key) const {
         Iterator it = begin();
 
         if (back_ != nullptr)
@@ -355,7 +413,7 @@ public:
         return it;
     }
 
-    Iterator upper_bound(KeyT key) const {
+    Iterator upper_bound(const KeyT &key) const {
         Iterator it = back();
 
         if (front_ != nullptr)
@@ -379,7 +437,7 @@ public:
         return count;
     }
 
-    size_t get_num_elems_from_diapason(KeyT key1, KeyT key2) const {
+    size_t get_num_elems_from_diapason(const KeyT &key1, const KeyT &key2) const {
         if (key1 > key2 || root_ == nullptr)
             return 0;
 
@@ -399,9 +457,9 @@ public:
 
     KeyT back() const { return back_->key_; }
 
-    Iterator begin() const { return Iterator{front_, this}; }
+    Iterator begin() const { return Iterator{front_, *this}; }
 
-    Iterator end() const { return Iterator{nullptr, this}; }
+    Iterator end() const { return Iterator{nullptr, *this}; }
 
     void print() const {
         root_->print_in_preorder();
@@ -427,63 +485,40 @@ private:
 
         back_ = back;
     }
+    
+    Node* lower_bound_node(const KeyT &key) const {
+        return bound_node(key, std::less<KeyT>{}, true);
+    }
+    
+    Node* upper_bound_node(const KeyT &key) const {
+        return bound_node(key, std::greater<KeyT>{}, false);
+    }
 
-    Node *lower_bound_node(KeyT key) const {
-        Node *cur = root_;
-        Node *ans = root_;
-
+    template <typename CompT>
+    Node* bound_node(const KeyT &key, CompT comp, bool is_lower) const {
+        Node* cur = root_;
+        Node* ans = root_;
+    
         while (cur != nullptr) {
-            if (cur->key_ > key) {
+            if (comp(key, cur->key_)) {
                 ans = cur;
-                cur = cur->left_;
-            } else if (cur->key_ < key) {
-                cur = cur->right_;
-            } else {
+                cur = is_lower ? cur->left_ : cur->right_;
+            } else if (cur->key_ == key) {
                 return cur;
+            } else {
+                cur = is_lower ? cur->right_ : cur->left_;
             }
         }
-
-        if (ans->key_ < key)
+    
+        if (is_lower && ans->key_ < key) {
             return nullptr;
-
+        } else if (!is_lower && ans->key_ > key) {
+            return nullptr;
+        }
+    
         return ans;
     }
 
-    Node *upper_bound_node(KeyT key) const {
-        Node *cur = root_;
-        Node *ans = root_;
-
-        while (cur != nullptr) {
-            if (cur->key_ < key) {
-                ans = cur;
-                cur = cur->right_;
-            } else if (cur->key_ > key) {
-                cur = cur->left_;
-            } else {
-                return cur;
-            }
-        }
-
-        if (ans->key_ > key)
-            return nullptr;
-
-        return ans;
-    }
-
-    Node *copy_subtree(Node *copy_node, Node *parent) {
-        if (!copy_node)
-            return nullptr;
-
-        Node *new_node = builder_.get_obj(copy_node->key_);
-        *new_node = *copy_node;
-        new_node->parent_ = parent;
-
-        new_node->left_ = copy_subtree(copy_node->left_, new_node);
-        new_node->right_ = copy_subtree(copy_node->right_, new_node);
-        return new_node;
-    }
-
-    size_t height_ = 0;
     Node *root_ = nullptr;
     Node *front_ = nullptr;
     Node *back_ = nullptr;
