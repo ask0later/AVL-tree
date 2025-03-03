@@ -17,11 +17,6 @@ public:
         buffer_.push_back(std::move(tmp));
         return raw_ptr;
     }
-
-    // template <class... Args>
-    // void emplace_back(Args&&... args) {
-    //     buffer_.emplace_back(std::forward<Args>(args)...);
-    // }
 private:
     std::vector<std::unique_ptr<T>> buffer_;
 }; // class Builder
