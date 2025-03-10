@@ -355,7 +355,7 @@ public:
     AVLtree(KeyT key) {
         Builder<Node> builder;
         root_ = builder.get_obj(key, nullptr);
-        buffer_.emplace_back(root_);
+        buffer_.push_back(std::move(builder.get_buffer().front()));
     }
 
     AVLtree(const AVLtree<KeyT, Compare> &other) {
