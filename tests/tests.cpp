@@ -1,6 +1,15 @@
 #include "tree.hpp"
 #include <gtest/gtest.h>
 
+TEST(TREE_TESTS, ctor1) {
+    trees::AVLtree<int> tree{1};
+    tree.insert(3);
+    tree.insert(2);
+    tree.insert(5);
+
+    ASSERT_EQ(tree.get_num_elems_from_diapason(1, 5), 4);
+}
+
 TEST(TREE_TESTS, get_num_elems_from_diapason_1) {
     trees::AVLtree<int> tree;
     tree.insert(4);
