@@ -139,6 +139,30 @@ TEST(TREE_TESTS, iterator_3) {
     }
 }
 
+TEST(TREE_TESTS, iterator_4) {
+    trees::AVLtree<int> tree;
+    for (int i = 0; i < 1000; i++)
+        tree.insert(i);
+
+    int i = 0;
+    for (auto it : tree) {
+        ASSERT_EQ(i, it);
+        i++;
+    }
+}
+
+TEST(TREE_TESTS, iterator_5) {
+    trees::AVLtree<int> tree;
+    for (int i = 0; i < 1000; i++)
+        tree.insert(i);
+
+    auto it1 = tree.begin();
+    auto it2 = tree.end();
+
+    std::advance(it1, 5);
+    ASSERT_EQ(std::distance(it1, it2), 1000 - 6);
+}
+
 TEST(TREE_TESTS, get_num_elems_from_diapason_6) {
     trees::AVLtree<int> tree;
     tree.insert(1);
