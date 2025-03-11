@@ -249,7 +249,7 @@ class AVLtree final {
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = KeyT;
         using difference_type = std::ptrdiff_t;
-        using pointer = Node*;
+        using pointer = value_type*;
         using reference = value_type&;
 
         Iterator() = default;
@@ -333,7 +333,7 @@ class AVLtree final {
             return node_->key_;
         }
 
-        pointer operator->() const {
+        Node* operator->() const {
             if (node_ == nullptr)
                 throw std::out_of_range("Iterator is at post-end");
 
