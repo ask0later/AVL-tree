@@ -463,17 +463,6 @@ public:
         return it;
     }
 
-    size_t distance(Iterator &it1, Iterator &it2) const {
-        if (it1.node_ == nullptr || it2.node_ == nullptr || *it1 > *it2)
-            return 0;
-
-        size_t count = 1;
-        for (; it1.node_ != it2.node_; ++it1, ++count)
-            ;
-
-        return count;
-    }
-
     size_t get_num_elems_from_diapason(const KeyT &key1, const KeyT &key2) const {
         if (key1 > key2 || root_ == nullptr)
             return 0;
