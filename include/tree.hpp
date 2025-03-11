@@ -256,18 +256,6 @@ class AVLtree final {
         Iterator(Node *node, const AVLtree<KeyT, Compare> &tree)
             : node_(node), tree_(tree) {}
 
-        Node *find_min(Node *node) const noexcept {
-            while (node && node->left_)
-                node = node->left_;
-            return node;
-        }
-
-        Node *find_max(Node *node) const noexcept {
-            while (node && node->right_)
-                node = node->right_;
-            return node;
-        }
-
         Iterator &operator++() noexcept {
             if (node_ == nullptr || node_ == tree_.back_) {
                 node_ = nullptr;
@@ -333,11 +321,25 @@ class AVLtree final {
             return node_->key_;
         }
 
-        Node* operator->() const {
+        KeyT & operator*() {
             if (node_ == nullptr)
                 throw std::out_of_range("Iterator is at post-end");
 
-            return node_;
+            return node_->key_;
+        }
+
+        KeyT const * operator->() const {
+            if (node_ == nullptr)
+                throw std::out_of_range("Iterator is at post-end");
+
+            return &(node_->key_);
+        }
+
+        KeyT * operator->() {
+            if (node_ == nullptr)
+                throw std::out_of_range("Iterator is at post-end");
+
+            return &(node_->key_);
         }
 
         friend bool operator==(const Iterator &lhs,
@@ -346,6 +348,18 @@ class AVLtree final {
         }
 
     private:
+        Node *find_min(Node *node) const noexcept {
+            while (node && node->left_)
+                node = node->left_;
+            return node;
+        }
+
+        Node *find_max(Node *node) const noexcept {
+            while (node && node->right_)
+                node = node->right_;
+            return node;
+        }
+
         Node *node_ = nullptr;
         const AVLtree<KeyT, Compare> &tree_;
     }; // class Iterator;
