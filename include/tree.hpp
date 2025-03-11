@@ -248,7 +248,7 @@ class AVLtree final {
     public:
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = KeyT;
-        using difference_type = std::ptrdiff_t;
+        using difference_type = size_t;
         using pointer = value_type*;
         using reference = value_type&;
 
