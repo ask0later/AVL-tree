@@ -79,7 +79,6 @@ TEST(TREE_TESTS, iterator_1) {
     int i = 0;
     for (auto it = tree.begin(); it != tree.end(); ++it) {
         ASSERT_EQ(i, *it);
-        ASSERT_EQ(i, it->key_);
         i++;
     }
 }
@@ -92,7 +91,50 @@ TEST(TREE_TESTS, iterator_2) {
     int i = 0;
     for (auto it = tree.begin(); it != tree.end(); ++it) {
         ASSERT_EQ(i, *it);
-        ASSERT_EQ(i, it->key_);
+        i++;
+    }
+}
+
+TEST(TREE_TESTS, iterator_3) {
+    struct Person {
+        std::string name_;
+        int age_;
+
+        bool operator<(const Person& other) const {
+            return age_ < other.age_;
+        }
+
+        bool operator==(const Person& other) const {
+            return age_ == other.age_;
+        }
+
+        bool operator<=(const Person& other) const {
+            return *this < other || *this == other;
+        }
+
+        bool operator!=(const Person& other) const {
+            return !(*this == other);
+        }
+
+        bool operator>(const Person& other) const {
+            return !(*this < other) && *this != other;
+        }
+
+        bool operator>=(const Person& other) const {
+            return *this > other || *this == other;
+        }
+    };
+
+    trees::AVLtree<Person> tree;
+    for (int i = 0; i < 1000; i++)
+    {
+        Person pers{"Oleg" + std::to_string(i), i};
+        tree.insert(pers);
+    }
+
+    int i = 0;
+    for (auto it = tree.begin(); it != tree.end(); ++it) {
+        ASSERT_EQ("Oleg" + std::to_string(i), it->name_);
         i++;
     }
 }
