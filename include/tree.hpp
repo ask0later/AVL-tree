@@ -10,7 +10,9 @@
 #include <algorithm>
 #include <iterator>
 
-namespace {
+namespace trees {
+namespace details {
+
 template <typename T> class Builder final {
 public:
     template <class... Args> T *get_obj(Args&&... args) {
@@ -30,9 +32,7 @@ public:
 private:
     std::vector<std::unique_ptr<T>> buffer_;
 }; // class Builder
-} // namespace
-
-namespace trees {
+} // namespace details
 
 template <typename KeyT = int, typename Compare = std::less<KeyT>>
 class AVLtree final {
@@ -85,40 +85,6 @@ class AVLtree final {
                 }
             }
             return count;
-        }
-
-        void print_in_preorder() const {
-            if (parent_)
-                std::cout << "#" << key_ << " " << parent_->key_ << " "
-                          << height_ << "#"
-                          << "(";
-            else
-                std::cout << "#" << key_ << " " << height_ << "#"
-                          << "(";
-
-            if (left_)
-                left_->print_in_preorder();
-
-            std::cout << ", ";
-
-            if (right_)
-                right_->print_in_preorder();
-
-            std::cout << ")";
-        }
-
-        void print_vertical(const std::string &prefix, bool is_left) const {
-            std::cout << prefix;
-            std::cout << (is_left ? "├──" : "└──");
-            std::cout << key_ << "(" << count_left_childs_ << ", "
-                      << count_right_childs_ << ")" << std::endl;
-
-            if (left_ != nullptr)
-                left_->print_vertical(prefix + (is_left ? "│   " : "    "),
-                                      true);
-            if (right_ != nullptr)
-                right_->print_vertical(prefix + (is_left ? "│   " : "    "),
-                                       false);
         }
 
     private:
@@ -308,7 +274,7 @@ class AVLtree final {
 public:
     AVLtree() = default;
     AVLtree(const KeyT &key) {
-        Builder<Node> builder;
+        details::Builder<Node> builder;
         root_ = builder.get_obj(key, nullptr);
         std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
     }
@@ -318,7 +284,7 @@ public:
             return;
         }
 
-        Builder<Node> builder;
+        details::Builder<Node> builder;
         root_ = builder.get_obj(other.root_->key_);
         root_->height_ = other.root_->height_;
 
@@ -364,14 +330,12 @@ public:
     ~AVLtree() = default;
 
     std::pair<Iterator, bool> insert(const KeyT &key) {
-        auto [const_place, const_parent] = find(key);
-        auto place = const_cast<Node**>(const_place);
-        auto parent = const_cast<Node*>(const_parent);
+        auto [place, parent] = find(key);
 
         if (!place)
             return {Iterator{parent, *this}, false};
 
-        Builder<Node> builder;
+        details::Builder<Node> builder;
         *place = builder.get_obj(key, parent);
         auto current = *place;
 
@@ -449,16 +413,6 @@ public:
 
     Iterator end() const { return Iterator{nullptr, *this}; }
 
-    void print() const {
-        root_->print_in_preorder();
-        std::cout << std::endl;
-    }
-
-    void print_vertical() const {
-        root_->print_vertical("", false);
-        std::cout << std::endl;
-    }
-
 private:
     void update_front_back() {
         Node *front = root_, *back = root_;
@@ -507,9 +461,9 @@ private:
         return ans;
     }
 
-    std::pair<const Node* const *, const Node*> find(const KeyT &key) const noexcept {
-        const Node* parent = nullptr;
-        const Node* const *place = &root_;
+    std::pair<Node**, Node*> find(const KeyT &key) noexcept {
+        Node *parent = nullptr;
+        Node **place = &root_;
 
         while (*place) {
             if (key == (*place)->key_)
