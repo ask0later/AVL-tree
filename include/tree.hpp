@@ -19,9 +19,13 @@ public:
         buffer_.push_back(std::move(tmp));
         return raw_ptr;
     }
+    
+    auto move_begin() {
+        return std::make_move_iterator(buffer_.begin());
+    }
 
-    std::vector<std::unique_ptr<T>> &get_buffer() {
-        return buffer_;
+    auto move_end() {
+        return std::make_move_iterator(buffer_.end());
     }
 private:
     std::vector<std::unique_ptr<T>> buffer_;
@@ -32,76 +36,13 @@ namespace trees {
 
 template <typename KeyT = int, typename Compare = std::less<KeyT>>
 class AVLtree final {
-    class Iterator;
-
     struct Node final {
         Node() = delete;
-        Node(KeyT key) : key_(key), height_(1) {}
-        Node(KeyT key, Node *parent, Node *left = nullptr,
+        Node(const KeyT &key) : key_(key), height_(1) {}
+        Node(const KeyT &key, Node *parent, Node *left = nullptr,
              Node *right = nullptr)
             : key_(key), parent_(parent), left_(left), right_(right),
               height_(1) {}
-
-        std::pair<Node*, bool> find(const KeyT &key) const noexcept {
-            Node* current = const_cast<Node*>(this);
-            Node* parent = nullptr;
-            bool is_left = false;
-            
-            while (current != nullptr) {
-                if (key == current->key_)
-                    return {nullptr, false};
-
-                if (key < current->key_) {
-                    parent = current;
-                    current = current->left_;
-                    is_left = true;
-                } else {
-                    parent = current;
-                    current = current->right_;
-                    is_left = false;
-                }
-            }
-
-            return {parent, is_left};
-        }
-
-        std::pair<Iterator, bool> insert(const KeyT &key, AVLtree &tree, std::vector<std::unique_ptr<Node>> &buffer) {
-            auto [parent, is_left] = find(key);
-            if (!parent)
-                return {Iterator{this, tree}, false};
-
-            Builder<Node> builder;
-            auto *new_node = builder.get_obj(key);
-            new_node->parent_ = parent;
-            if (is_left) 
-                parent->left_ = new_node;
-            else
-                parent->right_ = new_node;
-
-            parent = new_node->parent_;
-            auto current = new_node;
-
-            while (parent) {
-                if (parent->left_ == current)
-                    parent->count_left_childs_++;
-                else if (parent->right_ == current)
-                    parent->count_right_childs_++;
-
-                if (current->left_)
-                    current->left_->update_node();
-                if (current->right_)
-                    current->right_->update_node();
-
-                current->left_ = balance_node(key, current->left_);
-                current->right_ = balance_node(key, current->right_);
-
-                current = parent;
-                parent = parent->parent_;
-            }
-
-            buffer.push_back(std::move(builder.get_buffer().front()));
-            return {Iterator{new_node, tree}, true};
-        }
 
         static Node *balance_node(const KeyT &key, Node *node) noexcept {
             int balance = balance_factor(node);
@@ -123,6 +64,10 @@ class AVLtree final {
             }
 
             return node;
+        }
+
+        void update_node() noexcept {
+            height_ = 1 + std::max(height(left_), height(right_));
         }
 
         size_t count_bigger(Node *root) {
@@ -230,10 +175,6 @@ class AVLtree final {
             return node ? (height(node->left_) - height(node->right_)) : 0;
         }
 
-        void update_node() noexcept {
-            height_ = 1 + std::max(height(left_), height(right_));
-        }
-
     public:
         Node *left_ = nullptr;
         Node *right_ = nullptr;
@@ -321,21 +262,21 @@ class AVLtree final {
             return node_->key_;
         }
 
-        KeyT & operator*() {
+        KeyT &operator*() {
             if (node_ == nullptr)
                 throw std::out_of_range("Iterator is at post-end");
 
             return node_->key_;
         }
 
-        KeyT const * operator->() const {
+        KeyT const *operator->() const {
             if (node_ == nullptr)
                 throw std::out_of_range("Iterator is at post-end");
 
             return &(node_->key_);
         }
 
-        KeyT * operator->() {
+        KeyT *operator->() {
             if (node_ == nullptr)
                 throw std::out_of_range("Iterator is at post-end");
 
@@ -366,10 +307,10 @@ class AVLtree final {
 
 public:
     AVLtree() = default;
-    AVLtree(KeyT key) {
+    AVLtree(const KeyT &key) {
         Builder<Node> builder;
         root_ = builder.get_obj(key, nullptr);
-        buffer_.push_back(std::move(builder.get_buffer().front()));
+        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
     }
 
     AVLtree(const AVLtree<KeyT, Compare> &other) {
@@ -404,8 +345,8 @@ public:
                 stack.push({original->right_, copy->right_});
             }
         }
-        auto &&tmp_buf = builder.get_buffer();
-        std::move(tmp_buf.begin(), tmp_buf.end(), std::back_inserter(buffer_));
+        
+        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
     }
 
     AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &other) {
@@ -423,18 +364,39 @@ public:
     ~AVLtree() = default;
 
     std::pair<Iterator, bool> insert(const KeyT &key) {
-        if (root_ == nullptr) {
-            Builder<Node> builder;
-            root_ = builder.get_obj(key, nullptr);
-            update_front_back();
-            buffer_.push_back(std::move(builder.get_buffer().front()));
-            return {Iterator{root_, *this}, true};
+        auto [const_place, const_parent] = find(key);
+        auto place = const_cast<Node**>(const_place);
+        auto parent = const_cast<Node*>(const_parent);
+
+        if (!place)
+            return {Iterator{parent, *this}, false};
+
+        Builder<Node> builder;
+        *place = builder.get_obj(key, parent);
+        auto current = *place;
+
+        while (parent) {
+            if (parent->left_ == current)
+                parent->count_left_childs_++;
+            else if (parent->right_ == current)
+                parent->count_right_childs_++;
+
+            if (current->left_)
+                current->left_->update_node();
+            if (current->right_)
+                current->right_->update_node();
+
+            current->left_ = Node::balance_node(key, current->left_);
+            current->right_ = Node::balance_node(key, current->right_);
+
+            current = parent;
+            parent = parent->parent_;
         }
-        
-        root_ = Node::balance_node(key, root_);
+
         update_front_back();
 
-        return root_->insert(key, *this, buffer_);
+        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
+        return {Iterator{*place, *this}, true};
     }
 
     Iterator lower_bound(const KeyT &key) const {
@@ -543,6 +505,26 @@ private:
         }
     
         return ans;
+    }
+
+    std::pair<const Node* const *, const Node*> find(const KeyT &key) const noexcept {
+        const Node* parent = nullptr;
+        const Node* const *place = &root_;
+
+        while (*place) {
+            if (key == (*place)->key_)
+                return {nullptr, *place};
+
+            if (key < (*place)->key_) {
+                parent = *place;
+                place = &parent->left_;
+            } else {
+                parent = *place;
+                place = &parent->right_;
+            }
+        }
+
+        return {place, parent};
     }
 
     Node *root_ = nullptr;
