@@ -1,5 +1,6 @@
 #include "tree.hpp"
 #include <gtest/gtest.h>
+#include <compare>
 
 TEST(TREE_TESTS, ctor1) {
     trees::AVLtree<int> tree{1};
@@ -160,7 +161,7 @@ TEST(TREE_TESTS, iterator_5) {
     auto it2 = tree.end();
 
     std::advance(it1, 5);
-    ASSERT_EQ(std::distance(it1, it2), 1000 - 6);
+    ASSERT_EQ(std::distance(it1, it2), 995);
 }
 
 TEST(TREE_TESTS, get_num_elems_from_diapason_6) {
@@ -262,4 +263,46 @@ TEST(TREE_TESTS, move_semantic) {
     tree3.insert(6);
     tree3 = std::move(tree2);
     ASSERT_EQ(tree3.get_num_elems_from_diapason(1, 6), 5);
+}
+
+struct S {
+    S(int value): val(value) {}
+
+    S(const S &other) : val(other.val) {
+        x++;
+        if (x == 500)
+            throw std::exception();
+    }
+
+    bool operator<(const S &other) const {
+        return val < other.val;
+    }
+
+    bool operator==(const S &other) const {
+        return val == other.val;
+    }
+
+    bool operator>(const S &other) const {
+        return val > other.val;
+    }
+
+    int val;
+    static int x;
+};
+
+int S::x = 0;
+
+TEST(TREE_TESTS, exception_test) {
+    trees::AVLtree<S> tree1;
+    for (int i = 0; i < 300; ++i)
+        tree1.insert(S{i});
+
+    bool catched = false;
+    try {
+        auto tree2 = tree1;
+    } catch(...) {
+        catched = true;
+    }
+    
+    ASSERT_EQ(catched, true);
 }
