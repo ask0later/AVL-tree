@@ -311,7 +311,11 @@ public:
             }
         }
         
-        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
+        auto newIterBegin = builder.move_begin();
+        auto newIterEnd = builder.move_end();
+        buffer_.reserve(std::distance(newIterBegin, newIterEnd));
+
+        std::move(newIterBegin, newIterEnd, std::back_inserter(buffer_));
     }
 
     AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &other) {
@@ -358,7 +362,11 @@ public:
 
         update_front_back();
 
-        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
+        auto newIterBegin = builder.move_begin();
+        auto newIterEnd = builder.move_end();
+        buffer_.reserve(buffer_.size() + std::distance(newIterBegin, newIterEnd));
+        std::move(newIterBegin, newIterEnd, std::back_inserter(buffer_));
+        
         return {Iterator{*place, *this}, true};
     }
 
