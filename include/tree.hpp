@@ -38,11 +38,10 @@ template <typename KeyT = int, typename Compare = std::less<KeyT>>
 class AVLtree final {
     struct Node final {
         Node() = delete;
-        Node(const KeyT &key) : key_(key), height_(1) {}
+        Node(const KeyT &key) : key_(key) {}
         Node(const KeyT &key, Node *parent, Node *left = nullptr,
              Node *right = nullptr)
-            : key_(key), parent_(parent), left_(left), right_(right),
-              height_(1) {}
+            : key_(key), parent_(parent), left_(left), right_(right) {}
 
         static Node *balance_node(const KeyT &key, Node *node) noexcept {
             int balance = balance_factor(node);
@@ -145,7 +144,7 @@ class AVLtree final {
         Node *left_ = nullptr;
         Node *right_ = nullptr;
         Node *parent_ = nullptr;
-        int height_;
+        int height_ = 1;
         KeyT key_;
         size_t count_left_childs_ = 0;
         size_t count_right_childs_ = 0;
@@ -312,7 +311,11 @@ public:
             }
         }
         
-        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
+        auto newIterBegin = builder.move_begin();
+        auto newIterEnd = builder.move_end();
+        buffer_.reserve(std::distance(newIterBegin, newIterEnd));
+
+        std::move(newIterBegin, newIterEnd, std::back_inserter(buffer_));
     }
 
     AVLtree<KeyT, Compare> &operator=(const AVLtree<KeyT, Compare> &other) {
@@ -359,7 +362,11 @@ public:
 
         update_front_back();
 
-        std::move(builder.move_begin(), builder.move_end(), std::back_inserter(buffer_));
+        auto newIterBegin = builder.move_begin();
+        auto newIterEnd = builder.move_end();
+        buffer_.reserve(buffer_.size() + std::distance(newIterBegin, newIterEnd));
+        std::move(newIterBegin, newIterEnd, std::back_inserter(buffer_));
+        
         return {Iterator{*place, *this}, true};
     }
 
